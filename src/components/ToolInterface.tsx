@@ -57,16 +57,29 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize target KB constraints based on specialized SEO landing paths
+  // Initialize target KB constraints based on specialized SEO landing paths or query params
   useEffect(() => {
-    if (toolId === "compress-image-20kb" || toolId === "signature-resize-20kb") {
-      setTargetKB(20);
-    } else if (toolId === "compress-image-50kb") {
-      setTargetKB(50);
-    } else if (toolId === "compress-image-100kb" || toolId === "compress-pdf-100kb") {
-      setTargetKB(100);
-    } else if (toolId === "compress-pdf-500kb") {
-      setTargetKB(500);
+    let customKB: number | null = null;
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const queryKB = searchParams.get("targetKB");
+      if (queryKB) {
+        customKB = Number(queryKB);
+      }
+    }
+
+    if (customKB !== null && !isNaN(customKB)) {
+      setTargetKB(customKB);
+    } else {
+      if (toolId === "compress-image-20kb" || toolId === "signature-resize-20kb") {
+        setTargetKB(20);
+      } else if (toolId === "compress-image-50kb") {
+        setTargetKB(50);
+      } else if (toolId === "compress-image-100kb" || toolId === "compress-pdf-100kb") {
+        setTargetKB(100);
+      } else if (toolId === "compress-pdf-500kb") {
+        setTargetKB(500);
+      }
     }
 
     if (typeof window !== "undefined" && (window as any).__preloadedFile) {

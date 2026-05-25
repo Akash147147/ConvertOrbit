@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
 import AdPlaceholder from "@/components/AdPlaceholder";
 import PrivacySection from "@/components/PrivacySection";
+import CustomCompressor from "@/components/CustomCompressor";
 
 export const metadata: Metadata = {
   title: "ConvertOrbit - 100% Free & Secure Online PDF & Exact KB Tools",
@@ -203,6 +204,10 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
+
+                {cat.title === "Exact KB Compressors" && (
+                  <CustomCompressor />
+                )}
               </div>
             ))}
           </div>

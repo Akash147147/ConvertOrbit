@@ -242,6 +242,31 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
       }
 
       switch (toolId) {
+        // Universal Dashboard Smart Optimizer Fallback
+        case "universal-dashboard":
+          if (!primaryFile) throw new Error("Please upload a file to analyze first.");
+          const ext = primaryFile.name.split('.').pop()?.toLowerCase();
+          if (ext === "heic") {
+            output = await convertHeicToJpg(primaryFile, setProgress);
+          } else if (ext === "pdf") {
+            output = await compressPdfToExactKB(primaryFile, targetKB, setProgress);
+          } else if (["png", "jpg", "jpeg"].includes(ext || "")) {
+            output = await compressImageExactKB(primaryFile, targetKB, setProgress);
+          } else if (ext === "mov") {
+            output = await convertMovToMp4(primaryFile, setProgress);
+          } else if (ext === "docx") {
+            output = await convertWordToPdf(primaryFile, setProgress);
+          } else {
+            // General checksum fallback
+            setProgress(50);
+            const checksum = await generateFileChecksum(primaryFile, checksumAlgo);
+            setDevOutputText(checksum);
+            setProgress(100);
+            setStatus("success");
+            return;
+          }
+          break;
+
         // Base PDF/Images
         case "heic-to-jpg":
           output = await convertHeicToJpg(primaryFile, setProgress);

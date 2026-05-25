@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { 
   Upload, Search, ArrowRight, ShieldCheck, Zap, 
   HelpCircle, Image as ImageIcon, FileText, Video, Layers, 
-  CheckCircle2, AlertCircle, Sparkles, Sliders, Compass
+  CheckCircle2, AlertCircle, Sparkles, Sliders, Compass,
+  Lock, Type, Hash
 } from "lucide-react";
 
 interface ToolItem {
@@ -17,56 +18,42 @@ interface ToolItem {
 }
 
 const ALL_TOOLS: ToolItem[] = [
-  // Organize
+  // Exact size image
+  { id: "compress-image-20kb", name: "Compress Image to 20KB", desc: "Scale photo exactly under 20KB limit", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-emerald-500" /> },
+  { id: "compress-image-50kb", name: "Compress Image to 50KB", desc: "Scale photo exactly under 50KB limit", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-sky-500" /> },
+  { id: "compress-image-100kb", name: "Compress Image to 100KB", desc: "Scale photo exactly under 100KB limit", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-indigo-500" /> },
+  { id: "signature-resize-20kb", name: "Signature Resize 20KB", desc: "Scale signature under 20KB limit", exts: [".jpg", ".jpeg", ".png"], icon: <Sparkles className="h-5 w-5 text-emerald-500" /> },
+
+  // Passport / Visa
+  { id: "passport-photo-maker", name: "Passport Photo Maker", desc: "Create 2x2 inch print passport photos", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-blue-500" /> },
+  { id: "visa-photo-maker", name: "Visa Photo Resizer", desc: "Format photo for embassy visa rules", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-indigo-500" /> },
+
+  // Social crops
+  { id: "youtube-thumbnail-resizer", name: "YouTube Thumbnail Resizer", desc: "Scale image to exactly 1280x720 16:9", exts: [".jpg", ".jpeg", ".png"], icon: <Video className="h-5 w-5 text-red-500" /> },
+  { id: "linkedin-crop", name: "LinkedIn Banner Crop", desc: "Crop profile banner to 1584x396 (4:1)", exts: [".jpg", ".jpeg", ".png"], icon: <Sliders className="h-5 w-5 text-blue-500" /> },
+  { id: "instagram-resize", name: "Instagram Image Resizer", desc: "Scale photo to square or story bounds", exts: [".jpg", ".jpeg", ".png"], icon: <Layers className="h-5 w-5 text-indigo-500" /> },
+
+  // Exact PDF
+  { id: "compress-pdf-100kb", name: "Compress PDF to 100KB", desc: "Reduce PDF under strict 100KB limits", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-emerald-500" /> },
+  { id: "compress-pdf-500kb", name: "Compress PDF to 500KB", desc: "Reduce PDF under strict 500KB limits", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-indigo-500" /> },
+
+  // Image/Metadata tools
+  { id: "strip-metadata", name: "Strip Image Metadata", desc: "Delete location GPS & EXIF markers", exts: [".jpg", ".jpeg", ".png"], icon: <ShieldCheck className="h-5 w-5 text-emerald-500" /> },
+  { id: "convert-dpi", name: "Convert Image DPI", desc: "Change image resolution density headers", exts: [".jpg", ".jpeg", ".png"], icon: <Compass className="h-5 w-5 text-indigo-500" /> },
+  { id: "checksum-tool", name: "File Checksum Tool", desc: "Generate SHA-256 and MD5 binary hashes", exts: ["*"], icon: <Hash className="h-5 w-5 text-sky-500" /> },
+
+  // Developer tools
+  { id: "json-formatter", name: "JSON Formatter", desc: "Lint, validate, and indent JSON code", exts: [".json"], icon: <Type className="h-5 w-5 text-indigo-500" /> },
+  { id: "base64-encoder", name: "Base64 Encoder", desc: "Encode & decode string characters online", exts: ["*"], icon: <Type className="h-5 w-5 text-blue-500" /> },
+  { id: "hash-generator", name: "Hash Generator", desc: "Calculate MD5 & SHA-256 strings instantly", exts: ["*"], icon: <Hash className="h-5 w-5 text-sky-500" /> },
+
+  // PDF
   { id: "merge-pdf", name: "Merge PDF", desc: "Combine multiple PDF documents", exts: [".pdf"], icon: <Layers className="h-5 w-5 text-indigo-500" /> },
   { id: "split-pdf", name: "Split PDF", desc: "Extract specific page ranges from PDF", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-blue-500" /> },
   { id: "remove-pages", name: "Remove PDF Pages", desc: "Delete unwanted pages in a PDF", exts: [".pdf"], icon: <Trash2Icon className="h-5 w-5 text-red-500" /> },
-  { id: "extract-pages", name: "Extract PDF Pages", desc: "Extract custom PDF page collections", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-blue-500" /> },
   { id: "organize-pdf", name: "Organize PDF", desc: "Sort and rotate document sheets", exts: [".pdf"], icon: <Sliders className="h-5 w-5 text-indigo-500" /> },
-  { id: "scan-to-pdf", name: "Scan to PDF", desc: "Convert device camera scans to PDF", exts: [".jpg", ".png"], icon: <ImageIcon className="h-5 w-5 text-sky-500" /> },
-  
-  // Optimize
   { id: "pdf-compressor", name: "PDF Compressor", desc: "Reduce PDF documents weight", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-indigo-500" /> },
-  { id: "repair-pdf", name: "Repair PDF", desc: "Fix damaged or corrupt PDF documents", exts: [".pdf"], icon: <AlertCircle className="h-5 w-5 text-emerald-500" /> },
-  { id: "ocr-pdf", name: "OCR PDF", desc: "Make scanned PDF pages fully searchable", exts: [".pdf"], icon: <Sparkles className="h-5 w-5 text-blue-500" /> },
-  
-  // Convert to
-  { id: "jpg-to-pdf", name: "JPG to PDF", desc: "Combine images into a single PDF", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-indigo-500" /> },
-  { id: "word-to-pdf", name: "Word to PDF", desc: "Convert Word DOCX documents to PDF", exts: [".docx"], icon: <FileText className="h-5 w-5 text-sky-500" /> },
-  { id: "ppt-to-pdf", name: "PowerPoint to PDF", desc: "Transcode PPTX slides into PDF booklets", exts: [".pptx"], icon: <Layers className="h-5 w-5 text-blue-500" /> },
-  { id: "excel-to-pdf", name: "Excel to PDF", desc: "Convert Excel spreadsheet columns to PDF", exts: [".xlsx"], icon: <Sliders className="h-5 w-5 text-sky-500" /> },
-  { id: "html-to-pdf", name: "HTML to PDF", desc: "Render custom HTML codes into PDF pages", exts: [".html"], icon: <FileText className="h-5 w-5 text-indigo-500" /> },
-  
-  // Convert from
-  { id: "pdf-to-jpg", name: "PDF to JPG", desc: "Export PDF sheets as JPG image pages", exts: [".pdf"], icon: <ImageIcon className="h-5 w-5 text-sky-500" /> },
-  { id: "pdf-to-word", name: "PDF to Word", desc: "Extract PDF text to editable DOCX paragraphs", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-blue-500" /> },
-  { id: "pdf-to-ppt", name: "PDF to PowerPoint", desc: "Convert PDF sheets to PPTX slides", exts: [".pdf"], icon: <Layers className="h-5 w-5 text-indigo-500" /> },
-  { id: "pdf-to-excel", name: "PDF to Excel", desc: "Extract PDF tables to XLS grid layouts", exts: [".pdf"], icon: <Sliders className="h-5 w-5 text-sky-500" /> },
-  { id: "pdf-to-pdfa", name: "PDF to PDF/A", desc: "Convert to ISO archiving PDF standards", exts: [".pdf"], icon: <ShieldCheck className="h-5 w-5 text-emerald-500" /> },
-  
-  // Edit
-  { id: "rotate-pdf", name: "Rotate PDF", desc: "Rotate page rotations online", exts: [".pdf"], icon: <Compass className="h-5 w-5 text-indigo-500" /> },
-  { id: "add-page-numbers", name: "Add Page Numbers", desc: "Draw page numbers on PDF margins", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-sky-500" /> },
-  { id: "add-watermark", name: "Add Watermark", desc: "Stamp semi-transparent diagonal watermarks", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-blue-500" /> },
-  { id: "crop-pdf", name: "Crop PDF", desc: "Set PDF cropbox viewport margins", exts: [".pdf"], icon: <Sliders className="h-5 w-5 text-indigo-500" /> },
-  { id: "edit-pdf", name: "Edit PDF", desc: "Add drawing layers or annotations to PDF", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-blue-500" /> },
-  { id: "pdf-forms", name: "PDF Forms Fill", desc: "Fill interactive PDF form fields", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-sky-500" /> },
-  
-  // Security
-  { id: "unlock-pdf", name: "Unlock PDF", desc: "Strip password encryption off a PDF", exts: [".pdf"], icon: <FileText className="h-5 w-5 text-emerald-500" /> },
-  { id: "protect-pdf", name: "Protect PDF", desc: "Encrypt documents with secure passwords", exts: [".pdf"], icon: <ShieldCheck className="h-5 w-5 text-indigo-500" /> },
   { id: "sign-pdf", name: "Sign PDF", desc: "Draw and stamp signatures on any page", exts: [".pdf"], icon: <Sparkles className="h-5 w-5 text-blue-500" /> },
-  { id: "redact-pdf", name: "Redact PDF", desc: "Delete sensitive text sectors locally", exts: [".pdf"], icon: <Trash2Icon className="h-5 w-5 text-red-500" /> },
-  { id: "compare-pdf", name: "Compare PDF", desc: "Scan differences between two PDFs", exts: [".pdf"], icon: <Layers className="h-5 w-5 text-indigo-500" /> },
-  
-  // Intelligence
-  { id: "ai-summarizer", name: "AI PDF Summarizer", desc: "Get bullet summaries of large PDFs", exts: [".pdf"], icon: <Sparkles className="h-5 w-5 text-blue-500" /> },
-  { id: "translate-pdf", name: "Translate PDF", desc: "Translate text structures into dozens of languages", exts: [".pdf"], icon: <Sparkles className="h-5 w-5 text-indigo-500" /> },
-
-  // Base utilities
-  { id: "heic-to-jpg", name: "HEIC to JPG", desc: "Convert iOS HEIC photos to JPG format", exts: [".heic"], icon: <ImageIcon className="h-5 w-5 text-blue-500" /> },
-  { id: "compress-image-exact-kb", name: "Compress Image Exact KB", desc: "Scale JPG/PNG to target KBs", exts: [".jpg", ".jpeg", ".png"], icon: <ImageIcon className="h-5 w-5 text-sky-500" /> },
-  { id: "mov-to-mp4", name: "MOV to MP4 Converter", desc: "Convert video structures locally in your browser", exts: [".mov"], icon: <Video className="h-5 w-5 text-indigo-500" /> },
 ];
 
 function Trash2Icon({ className }: { className?: string }) {
@@ -126,7 +113,6 @@ export default function Hero() {
       if (allPdfs) {
         if (typeof window !== "undefined") {
           (window as any).__preloadedFile = files[0];
-          // We can share multiple files using window as well
           (window as any).__preloadedFiles = files;
         }
         router.push(`/tools/merge-pdf`);

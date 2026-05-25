@@ -4,7 +4,7 @@ import Link from "next/link";
 import { 
   ArrowRight, ShieldCheck, Zap, Layers, FileDown, 
   FileUp, FileText, Image as ImageIcon, Video, Minimize2, 
-  HelpCircle, Compass, Lock, Sliders, Type, Sparkles, Plus
+  HelpCircle, Compass, Lock, Sliders, Type, Sparkles, Hash
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -13,14 +13,14 @@ import AdPlaceholder from "@/components/AdPlaceholder";
 import PrivacySection from "@/components/PrivacySection";
 
 export const metadata: Metadata = {
-  title: "ConvertOrbit - 100% Free & Secure Online PDF Tools",
-  description: "Fast, Secure and Free File Tools for Everyone. Merge, Split, Compress, Convert, Edit, and Sign PDF documents 100% client-side inside your browser safely.",
+  title: "ConvertOrbit - 100% Free & Secure Online PDF & Exact KB Tools",
+  description: "Fast, Secure and Free File Tools for Everyone. Resize image to exact KB, create passport size photos, compress PDF to exactly 100KB/500KB client-side inside your browser safely.",
   alternates: {
     canonical: "https://convertorbit.com",
   },
   openGraph: {
-    title: "ConvertOrbit - Secure Client-Side PDF Tools Suite",
-    description: "Convert, Compress, Edit, and Optimize PDF Documents Instantly. Safe local browser processing ensures zero file uploads.",
+    title: "ConvertOrbit - Secure Exact Sizing Document Utilities",
+    description: "Compress PDFs to exactly 100KB/500KB, resize images to 20KB/50KB/100KB, and crop passport photos client-side safely in browser.",
     url: "https://convertorbit.com",
     siteName: "ConvertOrbit",
     type: "website",
@@ -43,87 +43,73 @@ interface CategoryInfo {
 
 const CATEGORIES: CategoryInfo[] = [
   {
-    title: "Organize PDF",
+    title: "Exact KB Compressors",
+    icon: <Minimize2 className="h-5 w-5 text-emerald-600" />,
+    desc: "Target exact portal constraints locally.",
+    tools: [
+      { id: "compress-image-20kb", name: "Compress Image to 20KB", desc: "Scale photo under 20KB limits.", icon: <ImageIcon className="h-4 w-4 text-emerald-500" /> },
+      { id: "compress-image-50kb", name: "Compress Image to 50KB", desc: "Scale photo under 50KB limits.", icon: <ImageIcon className="h-4 w-4 text-sky-500" /> },
+      { id: "compress-image-100kb", name: "Compress Image to 100KB", desc: "Scale photo under 100KB limits.", icon: <ImageIcon className="h-4 w-4 text-indigo-500" /> },
+      { id: "signature-resize-20kb", name: "Signature Resize 20KB", desc: "Scale signatures under 20KB limits.", icon: <Sparkles className="h-4 w-4 text-emerald-500" /> },
+      { id: "compress-pdf-100kb", name: "Compress PDF to 100KB", desc: "Reduce PDF under strict 100KB caps.", icon: <FileText className="h-4 w-4 text-emerald-500" /> },
+      { id: "compress-pdf-500kb", name: "Compress PDF to 500KB", desc: "Reduce PDF under strict 500KB caps.", icon: <FileText className="h-4 w-4 text-indigo-500" /> },
+    ]
+  },
+  {
+    title: "Passport & Sizing Utilities",
+    icon: <ImageIcon className="h-5 w-5 text-blue-600" />,
+    desc: "Create compliant print & embassy files.",
+    tools: [
+      { id: "passport-photo-maker", name: "Passport Photo Maker", desc: "Format standard 2x2 inch prints.", icon: <ImageIcon className="h-4 w-4 text-blue-500" /> },
+      { id: "visa-photo-maker", name: "Visa Photo Resizer", desc: "Sizing for Schengen & US embassy.", icon: <ImageIcon className="h-4 w-4 text-indigo-500" /> },
+      { id: "heic-to-jpg", name: "HEIC to JPG", desc: "Convert iOS photos into JPG format.", icon: <ImageIcon className="h-4 w-4 text-blue-500" /> },
+      { id: "compress-image-exact-kb", name: "Compress Image Exact KB", desc: "Scale images to target KBs.", icon: <Minimize2 className="h-4 w-4 text-sky-500" /> },
+      { id: "mov-to-mp4", name: "MOV to MP4 Converter", desc: "Convert video files in browser.", icon: <Video className="h-4 w-4 text-indigo-500" /> },
+    ]
+  },
+  {
+    title: "Social & Platform Crop",
+    icon: <Sliders className="h-5 w-5 text-indigo-600" />,
+    desc: "Lock aspect ratios to standard feeds.",
+    tools: [
+      { id: "youtube-thumbnail-resizer", name: "YouTube Thumbnail Resizer", desc: "Scale design precisely to 1280x720.", icon: <Video className="h-4 w-4 text-red-500" /> },
+      { id: "linkedin-crop", name: "LinkedIn Banner Crop", desc: "Crop profile banner to 1584x396 (4:1).", icon: <Sliders className="h-4 w-4 text-blue-500" /> },
+      { id: "instagram-resize", name: "Instagram Image Resizer", desc: "Scale photo to square or story bounds.", icon: <Layers className="h-4 w-4 text-indigo-500" /> },
+    ]
+  },
+  {
+    title: "Advanced PDF Utilities",
     icon: <Layers className="h-5 w-5 text-indigo-600" />,
-    desc: "Reorder, combine, split, or extract pages.",
+    desc: "Secure, edit, convert, merge or split.",
     tools: [
-      { id: "merge-pdf", name: "Merge PDF", desc: "Combine multiple files into a single PDF.", icon: <Layers className="h-4 w-4 text-indigo-500" /> },
-      { id: "split-pdf", name: "Split PDF", desc: "Extract specific page ranges from a PDF.", icon: <FileText className="h-4 w-4 text-blue-500" /> },
-      { id: "remove-pages", name: "Remove pages", desc: "Delete unwanted pages from documents.", icon: <FileText className="h-4 w-4 text-red-500" /> },
-      { id: "extract-pages", name: "Extract pages", desc: "Save custom page selections as standalone PDFs.", icon: <FileText className="h-4 w-4 text-sky-500" /> },
-      { id: "organize-pdf", name: "Organize PDF", desc: "Reorder, delete, and rotate document pages.", icon: <Sliders className="h-4 w-4 text-indigo-500" /> },
-      { id: "scan-to-pdf", name: "Scan to PDF", desc: "Compile camera snapshots directly into PDFs.", icon: <ImageIcon className="h-4 w-4 text-sky-500" /> },
+      { id: "merge-pdf", name: "Merge PDF", desc: "Combine multiple files into one PDF.", icon: <Layers className="h-4 w-4 text-indigo-500" /> },
+      { id: "split-pdf", name: "Split PDF", desc: "Extract specific page ranges safely.", icon: <FileText className="h-4 w-4 text-blue-500" /> },
+      { id: "remove-pages", name: "Remove pages", desc: "Delete unwanted pages client-side.", icon: <FileText className="h-4 w-4 text-red-500" /> },
+      { id: "organize-pdf", name: "Organize PDF", desc: "Reorder and rotate pages visually.", icon: <Sliders className="h-4 w-4 text-indigo-500" /> },
+      { id: "pdf-compressor", name: "PDF Compressor", desc: "Streamline PDF structures locally.", icon: <FileDown className="h-4 w-4 text-emerald-500" /> },
+      { id: "ocr-pdf", name: "OCR PDF", desc: "Make scanned PDF text fully searchable.", icon: <Sparkles className="h-4 w-4 text-blue-500" /> },
     ]
   },
   {
-    title: "Optimize PDF",
-    icon: <FileDown className="h-5 w-5 text-emerald-600" />,
-    desc: "Compress, fix, or run scans on document structures.",
-    tools: [
-      { id: "pdf-compressor", name: "Compress PDF", desc: "Reduce PDF storage size client-side.", icon: <FileDown className="h-4 w-4 text-emerald-500" /> },
-      { id: "repair-pdf", name: "Repair PDF", desc: "Scan and fix damaged or corrupted PDFs.", icon: <FileText className="h-4 w-4 text-rose-500" /> },
-      { id: "ocr-pdf", name: "OCR PDF", desc: "Make scanned PDF pages fully searchable.", icon: <Sparkles className="h-4 w-4 text-blue-500" /> },
-    ]
-  },
-  {
-    title: "Convert to PDF",
-    icon: <FileUp className="h-5 w-5 text-blue-600" />,
-    desc: "Compile external files into standardized PDFs.",
-    tools: [
-      { id: "jpg-to-pdf", name: "JPG to PDF", desc: "Combine multiple images into a single PDF.", icon: <ImageIcon className="h-4 w-4 text-blue-500" /> },
-      { id: "word-to-pdf", name: "Word to PDF", desc: "Convert Word DOCX documents into PDF.", icon: <FileText className="h-4 w-4 text-sky-500" /> },
-      { id: "ppt-to-pdf", name: "PowerPoint to PDF", desc: "Transcode PPTX slides into PDF slides.", icon: <Layers className="h-4 w-4 text-blue-500" /> },
-      { id: "excel-to-pdf", name: "Excel to PDF", desc: "Transform spreadsheets sheets into PDFs.", icon: <Sliders className="h-4 w-4 text-sky-500" /> },
-      { id: "html-to-pdf", name: "HTML to PDF", desc: "Render source HTML codes as PDF pages.", icon: <FileText className="h-4 w-4 text-indigo-500" /> },
-    ]
-  },
-  {
-    title: "Convert from PDF",
-    icon: <FileText className="h-5 w-5 text-indigo-600" />,
-    desc: "Export PDF layouts back into office formats.",
-    tools: [
-      { id: "pdf-to-jpg", name: "PDF to JPG", desc: "Render PDF page sheets as high-res images.", icon: <ImageIcon className="h-4 w-4 text-sky-500" /> },
-      { id: "pdf-to-word", name: "PDF to Word", desc: "Extract layout text to editable DOCX format.", icon: <FileText className="h-4 w-4 text-blue-500" /> },
-      { id: "pdf-to-ppt", name: "PDF to PowerPoint", desc: "Convert document sheets to PPTX slides.", icon: <Layers className="h-4 w-4 text-indigo-500" /> },
-      { id: "pdf-to-excel", name: "PDF to Excel", desc: "Export page data grids into XLS tables.", icon: <Sliders className="h-4 w-4 text-sky-500" /> },
-      { id: "pdf-to-pdfa", name: "PDF to PDF/A", desc: "Save PDFs for long-term legal archiving.", icon: <ShieldCheck className="h-4 w-4 text-emerald-500" /> },
-    ]
-  },
-  {
-    title: "Edit PDF",
-    icon: <Type className="h-5 w-5 text-sky-600" />,
-    desc: "Add watermarks, rotations, page numbers, or crops.",
-    tools: [
-      { id: "rotate-pdf", name: "Rotate PDF", desc: "Rotate individual or all pages instantly.", icon: <Compass className="h-4 w-4 text-indigo-500" /> },
-      { id: "add-page-numbers", name: "Add page numbers", desc: "Draw sequential page numbers on margins.", icon: <FileText className="h-4 w-4 text-sky-500" /> },
-      { id: "add-watermark", name: "Add watermark", desc: "Stamp diagonal semi-transparent watermarks.", icon: <Type className="h-4 w-4 text-blue-500" /> },
-      { id: "crop-pdf", name: "Crop PDF", desc: "Set PDF cropbox viewport margins locally.", icon: <Sliders className="h-4 w-4 text-indigo-500" /> },
-      { id: "edit-pdf", name: "Edit PDF", desc: "Add drawing layers or annotations to PDF.", icon: <FileText className="h-4 w-4 text-blue-500" /> },
-      { id: "pdf-forms", name: "PDF Forms", desc: "Fill out interactive text form fields.", icon: <FileText className="h-4 w-4 text-sky-500" /> },
-    ]
-  },
-  {
-    title: "PDF Security",
+    title: "Security & Metadata",
     icon: <Lock className="h-5 w-5 text-rose-600" />,
-    desc: "Sign, encrypt, password-protect, or redact pages.",
+    desc: "Protect location details and encrypt data.",
     tools: [
-      { id: "unlock-pdf", name: "Unlock PDF", desc: "Strip password encryption off a secure PDF.", icon: <FileText className="h-4 w-4 text-emerald-500" /> },
-      { id: "protect-pdf", name: "Protect PDF", desc: "Encrypt document sheets with secure passwords.", icon: <Lock className="h-4 w-4 text-rose-500" /> },
-      { id: "sign-pdf", name: "Sign PDF", desc: "Draw and stamp signatures on page layers.", icon: <Sparkles className="h-4 w-4 text-blue-500" /> },
-      { id: "redact-pdf", name: "Redact PDF", desc: "Blackout and cryptographically delete sensitive text.", icon: <FileText className="h-4 w-4 text-red-500" /> },
-      { id: "compare-pdf", name: "Compare PDF", desc: "Detect visual difference diffs between PDFs.", icon: <Layers className="h-4 w-4 text-indigo-500" /> },
+      { id: "strip-metadata", name: "Strip Image Metadata", desc: "Wipe location coordinates and EXIF.", icon: <ShieldCheck className="h-4 w-4 text-emerald-500" /> },
+      { id: "convert-dpi", name: "Convert Image DPI", desc: "Rewrite resolution density headers.", icon: <Compass className="h-4 w-4 text-indigo-500" /> },
+      { id: "checksum-tool", name: "File Checksum Tool", desc: "Generate SHA-256 and MD5 hashes.", icon: <Hash className="h-4 w-4 text-sky-500" /> },
+      { id: "protect-pdf", name: "Protect PDF", desc: "Password encrypt document sheets.", icon: <Lock className="h-4 w-4 text-rose-500" /> },
+      { id: "sign-pdf", name: "Sign PDF", desc: "Stamp transparent drawn signatures.", icon: <Sparkles className="h-4 w-4 text-blue-500" /> },
     ]
   },
   {
-    title: "PDF Intelligence & Media",
+    title: "Developer Sandbox",
     icon: <Sparkles className="h-5 w-5 text-blue-600" />,
-    desc: "AI document smart summaries, translations, and images.",
+    desc: "Lint JSON or compute cryptographic hashes.",
     tools: [
-      { id: "ai-summarizer", name: "AI Summarizer", desc: "Get bullet summaries of lengthy PDF sheets.", icon: <Sparkles className="h-4 w-4 text-blue-500" /> },
-      { id: "translate-pdf", name: "Translate PDF", desc: "Translate text structures locally in the browser.", icon: <Sparkles className="h-4 w-4 text-indigo-500" /> },
-      { id: "heic-to-jpg", name: "HEIC to JPG", desc: "Convert Apple HEIC photos to JPG format.", icon: <ImageIcon className="h-4 w-4 text-blue-500" /> },
-      { id: "compress-image-exact-kb", name: "Compress Image KB", desc: "Shrink images to exact target weights in KB.", icon: <Minimize2 className="h-4 w-4 text-emerald-500" /> },
-      { id: "mov-to-mp4", name: "MOV to MP4", desc: "Transcode video files safely inside browser.", icon: <Video className="h-4 w-4 text-indigo-500" /> },
+      { id: "json-formatter", name: "JSON Formatter", desc: "Lint, validate and indent JSON files.", icon: <Type className="h-4 w-4 text-indigo-500" /> },
+      { id: "base64-encoder", name: "Base64 Encoder", desc: "Encode & decode string text online.", icon: <Type className="h-4 w-4 text-blue-500" /> },
+      { id: "hash-generator", name: "Hash Generator", desc: "Calculate MD5 & SHA-256 strings.", icon: <Hash className="h-4 w-4 text-sky-500" /> },
     ]
   }
 ];
@@ -173,14 +159,14 @@ export default function Home() {
         <section id="all-tools" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-12">
           <div className="space-y-4 text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">
-              Professional Document & PDF Suite
+              Highly Searched Specialized Utilities
             </h2>
             <p className="text-sm font-medium text-slate-500">
-              Select one of our specialized client-side utilities. Processed 100% locally in your browser.
+              Select one of our precise constraint templates. Processed 100% locally in your browser.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {CATEGORIES.map((cat, idx) => (
               <div
                 key={idx}

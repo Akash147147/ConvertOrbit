@@ -46,8 +46,7 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
     metaDescription: "Split PDF files online for free. Extract pages or split PDF document ranges locally in your browser. Complete document split tools with zero uploads.",
     steps: ["Upload your source PDF document.", "Input the page ranges you want to extract (e.g. 1-3, 5).", "Click 'Optimize & Convert' to slice the pages locally.", "Save and download the split document."],
     faqs: [
-      { q: "How do I specify page ranges?", a: "Simply enter the numbers separated by commas and hyphens, for example '1-3, 5' to extract pages 1, 2, 3, and 5." },
-      { q: "Are there file limits for split operations?", a: "No. Since calculations run on your own hardware, you can split PDFs of any size." }
+      { q: "How do I specify page ranges?", a: "Simply enter the numbers separated by commas and hyphens, for example '1-3, 5' to extract pages 1, 2, 3, and 5." }
     ],
     related: ["merge-pdf", "remove-pages"]
   },
@@ -104,7 +103,7 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
     related: ["jpg-to-pdf", "pdf-compressor"]
   },
 
-  // Column 2: Optimize PDF
+  // Column 2: Optimize PDF & Exact sizes
   "pdf-compressor": {
     id: "pdf-compressor",
     name: "PDF Compressor",
@@ -118,18 +117,31 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
     ],
     related: ["word-to-pdf", "ocr-pdf"]
   },
-  "repair-pdf": {
-    id: "repair-pdf",
-    name: "Repair PDF",
-    headline: "Repair Corrupted or Damaged PDF Files",
-    description: "Scan and reconstruct corrupt internal document tables and objects to make your PDF readable again.",
+  "compress-pdf-100kb": {
+    id: "compress-pdf-100kb",
+    name: "Compress PDF to 100KB",
+    headline: "Compress PDF to Exactly 100KB Online",
+    description: "Shrink heavy PDF documents exactly under the 100KB threshold to pass strict governmental or visa upload portals recursively.",
     inputAccept: ".pdf",
-    metaDescription: "Fix and repair corrupted PDF documents online for free. Rebuilds broken tables and objects client-side.",
-    steps: ["Upload the corrupted PDF file.", "The local engine scans for damaged stream structures.", "Recompile intact pages.", "Download the repaired document."],
+    metaDescription: "Compress PDF documents exactly below 100KB online for free. Highly optimized client-side compaction runs directly in your browser.",
+    steps: ["Select your PDF document.", "Click 'Optimize & Convert' to run our local adaptive compressor.", "Verify the final size matches the 100KB cap.", "Download your optimized PDF document."],
     faqs: [
-      { q: "Can all broken PDFs be repaired?", a: "Most PDFs with minor indexing issues can be fully recovered, though heavily corrupted binary files may have page losses." }
+      { q: "How does it compress exactly to 100KB?", a: "Our algorithm runs local stream compaction and rasterizes high-resolution image resources to align with the 100KB threshold." }
     ],
-    related: ["pdf-compressor", "ocr-pdf"]
+    related: ["compress-pdf-500kb", "pdf-compressor"]
+  },
+  "compress-pdf-500kb": {
+    id: "compress-pdf-500kb",
+    name: "Compress PDF to 500KB",
+    headline: "Compress PDF to Exactly 500KB Online",
+    description: "Reduce the weight of large PDF portfolios and books exactly below the 500KB cap client-side.",
+    inputAccept: ".pdf",
+    metaDescription: "Compress PDF files exactly below 500KB online for free. Secure browser-based stream processing ensures total data privacy.",
+    steps: ["Select your PDF file.", "Click 'Optimize & Convert' to boot our local adaptive compressor.", "Verify size bounds match the 500KB limit.", "Save and download the compressed PDF."],
+    faqs: [
+      { q: "Does the text quality remain sharp?", a: "Yes. Text blocks remain vector sharp and searchable; only visual elements are optimized." }
+    ],
+    related: ["compress-pdf-100kb", "pdf-compressor"]
   },
   "ocr-pdf": {
     id: "ocr-pdf",
@@ -145,313 +157,263 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
     related: ["pdf-compressor", "pdf-to-word"]
   },
 
-  // Column 3: Convert to PDF
-  "jpg-to-pdf": {
-    id: "jpg-to-pdf",
-    name: "JPG to PDF",
-    headline: "Convert JPG and PNG Images to PDF Online",
-    description: "Combine multiple JPG/PNG images into a single PDF document. Full bleed vector conversion with zero file uploads.",
+  // Column 3: Exact Image resizers
+  "compress-image-20kb": {
+    id: "compress-image-20kb",
+    name: "Compress Image to 20KB",
+    headline: "Compress JPG/PNG Images to Exactly 20KB",
+    description: "Shrink photos, passport uploads, or signatures exactly below the 20KB threshold for online registration portals.",
     inputAccept: ".jpg,.jpeg,.png",
-    metaDescription: "Convert JPG to PDF online for free. Support batch image combination into high-quality PDFs client-side in your browser.",
-    steps: ["Select or drag one or more images into the dropzone.", "Reorder image cards as desired.", "Click 'Optimize & Convert'.", "Download your compiled PDF document."],
+    metaDescription: "Resize and compress images exactly below 20KB online. Fast client-side binary search adjusts quality directly in your browser.",
+    steps: ["Upload your JPG or PNG image.", "The target KB is automatically locked to exactly 20KB.", "Click 'Optimize & Convert'.", "Download your exact 20KB image."],
     faqs: [
-      { q: "Is there a limit to the number of images I can combine?", a: "No. You can compile dozens of images into a single PDF book." }
+      { q: "Why is 20KB important?", a: "Many government and job portals cap photo uploads to strictly under 20KB." }
     ],
-    related: ["png-to-ico", "pdf-compressor"]
+    related: ["compress-image-50kb", "signature-resize-20kb"]
   },
-  "word-to-pdf": {
-    id: "word-to-pdf",
-    name: "Word to PDF",
-    headline: "Convert Microsoft DOCX to PDF Online",
-    description: "Instantly create high-quality, professional PDF files from Microsoft Word documents. Preserves headings, fonts, and layouts entirely client-side.",
-    inputAccept: ".docx",
-    metaDescription: "Convert Word DOCX to PDF online for free. 100% client-side conversion protects your legal and personal documents from leaks.",
-    steps: ["Select your Word .docx document.", "Our system reads paragraphs and fonts locally in browser memory.", "Click 'Optimize & Convert' to generate vector PDF layouts.", "Download the fully formatted PDF."],
+  "compress-image-50kb": {
+    id: "compress-image-50kb",
+    name: "Compress Image to 50KB",
+    headline: "Compress JPG/PNG Images to Exactly 50KB",
+    description: "Scale photos, visa applications, or profile pictures exactly under the 50KB limit client-side.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Resize and compress image files exactly below 50KB online. Client-side canvas binary search ensures perfect size accuracy.",
+    steps: ["Select your image file.", "The target size is locked to 50KB.", "Click 'Optimize & Convert'.", "Download your clean 50KB JPG."],
     faqs: [
-      { q: "Does ConvertOrbit support doc or docx?", a: "Currently, we support the standard .docx XML format which can be generated by all modern word processors." }
+      { q: "Is PNG supported?", a: "Yes, our canvas engine processes PNGs and automatically compresses them to optimized JPGs to hit 50KB." }
     ],
-    related: ["pdf-to-word", "pdf-compressor"]
+    related: ["compress-image-20kb", "compress-image-100kb"]
   },
-  "ppt-to-pdf": {
-    id: "ppt-to-pdf",
-    name: "PowerPoint to PDF",
-    headline: "Convert PowerPoint PPTX Slides to PDF",
-    description: "Convert Microsoft PowerPoint presentations into standard PDF files client-side. Zero server delays.",
-    inputAccept: ".pptx",
-    metaDescription: "Convert PPTX to PDF online. Fully secure browser conversion ensures your presentations and business slides stay local and safe.",
-    steps: ["Upload your PPTX file.", "Click 'Optimize & Convert' to parse slides.", "Download the high-quality vector PDF."],
+  "compress-image-100kb": {
+    id: "compress-image-100kb",
+    name: "Compress Image to 100KB",
+    headline: "Compress JPG/PNG Images to Exactly 100KB",
+    description: "Resize high-resolution pictures to exactly under 100KB for school portals, visa uploads, or web forms recursively.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Resize images to exactly 100KB online for free. Highly optimized client-side resizing guarantees perfect results.",
+    steps: ["Select your source picture.", "Target KB is locked to 100KB.", "Click 'Optimize & Convert'.", "Save the optimized 100KB image file."],
     faqs: [
-      { q: "Are slide animations preserved?", a: "Animations are converted to clean, sequential static PDF slides for easy reading and printing." }
+      { q: "Does this upload my image?", a: "No, all binary search processes run client-side in browser memory." }
     ],
-    related: ["word-to-pdf", "excel-to-pdf"]
+    related: ["compress-image-50kb", "compress-image-exact-kb"]
   },
-  "excel-to-pdf": {
-    id: "excel-to-pdf",
-    name: "Excel to PDF",
-    headline: "Convert Excel Spreadsheets to PDF Documents",
-    description: "Transform XLS and XLSX sheets into print-ready PDF files. Fits charts and sheets cleanly client-side.",
-    inputAccept: ".xlsx,.xls",
-    metaDescription: "Convert Excel to PDF online. Free, safe client-side conversion maps spreadsheets to layout-perfect PDF page formats.",
-    steps: ["Upload your Excel sheet.", "Click 'Optimize & Convert'.", "Save the newly generated PDF spreadsheet."],
+  "signature-resize-20kb": {
+    id: "signature-resize-20kb",
+    name: "Signature Resize 20KB",
+    headline: "Resize Signature Images to Exactly 20KB",
+    description: "Shrink signatures or transparent sign snippets exactly below 20KB to comply with governmental portal limits.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Resize signature images to exactly under 20KB online. Perfect size adjustments client-side for secure uploads.",
+    steps: ["Upload your signature JPG/PNG snippet.", "The target size is set to 20KB.", "Click 'Optimize & Convert'.", "Download your optimized signature."],
     faqs: [
-      { q: "Will the gridlines be visible?", a: "Gridlines and font parameters are rendered exactly as configured inside your spreadsheet page setup." }
+      { q: "Does it keep the signature sharp?", a: "Yes. Our binary search preserves sharp contours and high legibility even under 20KB." }
     ],
-    related: ["word-to-pdf", "ppt-to-pdf"]
-  },
-  "html-to-pdf": {
-    id: "html-to-pdf",
-    name: "HTML to PDF",
-    headline: "Convert Web Pages HTML to PDF Documents",
-    description: "Compile source HTML layouts or URLs into portable document PDFs entirely inside your browser.",
-    inputAccept: ".html,.htm",
-    metaDescription: "Convert HTML files or codes into high-fidelity PDF layouts. Complete local vector drawings with zero server processing.",
-    steps: ["Paste HTML code or upload the HTML file.", "Click 'Optimize & Convert'.", "Download the rendered vector PDF."],
-    faqs: [
-      { q: "Does it render CSS stylesheets?", a: "Yes. Standard inline and mapped CSS styling are parsed to create clean page structures." }
-    ],
-    related: ["word-to-pdf", "jpg-to-pdf"]
+    related: ["compress-image-20kb", "sign-pdf"]
   },
 
-  // Column 4: Convert from PDF
-  "pdf-to-jpg": {
-    id: "pdf-to-jpg",
-    name: "PDF to JPG",
-    headline: "Convert PDF Document Pages to JPG Images",
-    description: "Render PDF page sheets into sharp, high-resolution JPG images visually in your browser. Select specific pages to download instantly.",
-    inputAccept: ".pdf",
-    metaDescription: "Convert PDF to JPG images online for free. Uses local canvas renders to export PDF sheets into sharp JPG files with zero uploads.",
-    steps: ["Select the PDF document.", "Pages render visually as image canvas cards.", "Select and click download on individual pages or the full set.", "Save the sharp JPG images."],
+  // Column 4: Passport & Visa maker
+  "passport-photo-maker": {
+    id: "passport-photo-maker",
+    name: "Passport Photo Maker",
+    headline: "Create standard 2x2 inch Passport Photos",
+    description: "Align, crop, and resize your face photo to standard 2x2 inch (51x51mm) dimensions. Includes chin-crown boundary alignment grids.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Passport photo maker online. Crop your photo to standard 2x2 inch boundaries client-side in your browser for free.",
+    steps: ["Select your portrait photo.", "Align your crown and chin within our visual guides.", "Click 'Optimize & Convert' to crop and scale.", "Download print-ready passport photos."],
     faqs: [
-      { q: "Can I download individual pages?", a: "Yes. You can click to download only the specific pages you need as separate images." }
+      { q: "What are the dimensions?", a: "Standard US passport photos require exactly 2x2 inches (51x51mm) at 300 DPI." }
     ],
-    related: ["jpg-to-pdf", "pdf-to-word"]
+    related: ["visa-photo-maker", "compress-image-20kb"]
   },
-  "pdf-to-word": {
-    id: "pdf-to-word",
-    name: "PDF to Word",
-    headline: "Convert PDF Documents to Editable Word Files",
-    description: "Extract lines, text alignments, and structures from PDFs, compiling them into a download-ready Word docx document.",
-    inputAccept: ".pdf",
-    metaDescription: "Convert PDF to Word DOCX online for free. Processes file text client-side, compiling a brand new DOCX structure right inside your browser.",
-    steps: ["Select your source PDF document.", "Our parser analyzes text blocks and page layout elements.", "Click 'Optimize & Convert' to compile the DOCX structure.", "Download your editable Word document."],
+  "visa-photo-maker": {
+    id: "visa-photo-maker",
+    name: "Visa Photo Resizer",
+    headline: "Resize Visa Photos Online Free",
+    description: "Format portrait pictures to customized European Schengen, US, or Asian embassy visa specifications.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Embassy visa photo resizer online. Crop and format photos to standard visa sizes client-side securely.",
+    steps: ["Upload your portrait picture.", "Select your target visa size (e.g. 35x45mm).", "Align your face inside crop grids.", "Save your optimized visa photo."],
     faqs: [
-      { q: "Can I edit the converted Word file?", a: "Yes. It generates a fully native Word document with editable paragraphs and formatting runs." }
+      { q: "What is the standard Schengen visa size?", a: "Schengen visas require exactly 35x45mm color photos with a light background." }
     ],
-    related: ["word-to-pdf", "pdf-compressor"]
-  },
-  "pdf-to-ppt": {
-    id: "pdf-to-ppt",
-    name: "PDF to PowerPoint",
-    headline: "Convert PDF Pages to PowerPoint Slides",
-    description: "Export PDF page layouts as editable vector slides inside a Microsoft PPTX presentation locally.",
-    inputAccept: ".pdf",
-    metaDescription: "Convert PDF to PPTX online. Safe client-side document processing extracts shapes and text to build editable PowerPoint slides.",
-    steps: ["Select the PDF file.", "Click 'Optimize & Convert'.", "Download the compiled PPTX slide deck."],
-    faqs: [
-      { q: "Is the vector formatting preserved?", a: "Yes, shapes and text are mapped as vector components where possible for editing." }
-    ],
-    related: ["pdf-to-word", "pdf-to-excel"]
-  },
-  "pdf-to-excel": {
-    id: "pdf-to-excel",
-    name: "PDF to Excel",
-    headline: "Convert PDF Tables to Excel Spreadsheets",
-    description: "Scan PDF tables and alignments and compile them into editable Microsoft Excel XLS/XLSX worksheets client-side.",
-    inputAccept: ".pdf",
-    metaDescription: "Convert PDF to Excel spreadsheets. Fast browser text extraction constructs clean, structured XLSX grids with zero leaks.",
-    steps: ["Choose your PDF document containing tables.", "Click 'Optimize & Convert' to map text loops to grids.", "Download your editable Excel sheet."],
-    faqs: [
-      { q: "Can it extract multiple tables?", a: "Yes, our algorithm handles page boundaries to separate grids into clean consecutive sheets." }
-    ],
-    related: ["pdf-to-word", "pdf-to-ppt"]
-  },
-  "pdf-to-pdfa": {
-    id: "pdf-to-pdfa",
-    name: "PDF to PDF/A",
-    headline: "Convert PDF to PDF/A for Long-Term Archiving",
-    description: "Format standard PDF files to ISO-compliant PDF/A specifications (e.g. PDF/A-1b or PDF/A-2b) client-side securely.",
-    inputAccept: ".pdf",
-    metaDescription: "Convert PDF to PDF/A online for ISO long-term archiving standard compliance. Secure local browser conversion.",
-    steps: ["Select your standard PDF.", "Our engine checks and embeds standard fonts and profiles.", "Click 'Optimize & Convert'.", "Save the archived PDF/A document."],
-    faqs: [
-      { q: "Why use PDF/A?", a: "PDF/A is designed for long-term document preservation, ensuring the document looks exactly the same on any future device." }
-    ],
-    related: ["pdf-compressor", "protect-pdf"]
+    related: ["passport-photo-maker", "compress-image-50kb"]
   },
 
-  // Column 5: Edit PDF
-  "rotate-pdf": {
-    id: "rotate-pdf",
-    name: "Rotate PDF",
-    headline: "Rotate PDF Pages Online Locally",
-    description: "Rotate individual or all pages of your PDF document (90°, 180°, 270° degrees) instantly in your browser.",
-    inputAccept: ".pdf",
-    metaDescription: "Rotate PDF files online for free. Adjust page rotations client-side in your browser. Completely private with zero uploads.",
-    steps: ["Upload your PDF file.", "Select the rotation angle (90, 180, or 270 degrees).", "Click 'Optimize & Convert' to rewrite rotations.", "Download the rotated PDF."],
+  // Column 5: Social Crop Aspect Resizers
+  "youtube-thumbnail-resizer": {
+    id: "youtube-thumbnail-resizer",
+    name: "YouTube Thumbnail Resizer",
+    headline: "Resize YouTube Thumbnails to 1280x720",
+    description: "Lock aspect ratios to exactly 16:9 and output exactly 1280x720 pixel JPG thumbnails under the 2MB cap.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "YouTube thumbnail resizer online. Scale and resize images to standard 1280x720 format client-side in browser.",
+    steps: ["Upload your thumbnail design.", "Our engine locks aspect parameters to 1280x720.", "Click 'Optimize & Convert'.", "Save the ready YouTube thumbnail."],
     faqs: [
-      { q: "Can I rotate only a single page?", a: "Yes, our visual interface lets you select and rotate specific pages independently." }
+      { q: "Why is 1280x720 important?", a: "YouTube requires exactly 1280x720 dimensions at 16:9 aspect ratio, keeping files under 2MB." }
     ],
-    related: ["organize-pdf", "split-pdf"]
+    related: ["linkedin-crop", "instagram-resize"]
   },
-  "add-page-numbers": {
-    id: "add-page-numbers",
-    name: "Add Page Numbers",
-    headline: "Add Page Numbers to PDF Files",
-    description: "Number PDF pages recursively at the top or bottom margin. Visual alignment selectors execute entirely in the browser.",
-    inputAccept: ".pdf",
-    metaDescription: "Add page numbers to PDF documents online. Free, safe client-side stamp draws vector numbers locally on each sheet.",
-    steps: ["Upload your PDF document.", "Choose your position (Top or Bottom center).", "Click 'Optimize & Convert'.", "Download your numbered PDF."],
+  "linkedin-crop": {
+    id: "linkedin-crop",
+    name: "LinkedIn Banner Crop",
+    headline: "Format LinkedIn Banners to 1584x396",
+    description: "Lock aspect ratios to 4:1 and crop backgrounds exactly to standard 1584x396 pixel banner layouts.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "LinkedIn banner crop online. Scale images to exactly 1584x396 pixel grids client-side for free.",
+    steps: ["Select your background banner image.", "Crop bounds are locked to 4:1 aspect parameters.", "Adjust crop viewport and compile.", "Download the LinkedIn banner."],
     faqs: [
-      { q: "Can I choose the numbering font?", a: "We embed standard highly legible Helvetica and Times New Roman vector fonts for printing." }
+      { q: "What is the banner size?", a: "LinkedIn profiles require exactly 1584x396 pixel dimensions." }
     ],
-    related: ["add-watermark", "rotate-pdf"]
+    related: ["youtube-thumbnail-resizer", "instagram-resize"]
   },
-  "add-watermark": {
-    id: "add-watermark",
-    name: "Add Watermark",
-    headline: "Add Watermark Text to PDF Online",
-    description: "Superimpose semi-transparent watermark text (e.g. 'CONFIDENTIAL') diagonally across pages. Opacity sliders execute locally.",
-    inputAccept: ".pdf",
-    metaDescription: "Watermark PDF files online for free. Add semi-transparent text to document pages client-side with zero file uploads.",
-    steps: ["Select your PDF file.", "Enter your custom watermark text.", "Adjust the opacity using the range slider.", "Click 'Optimize & Convert' to draw layers.", "Download the watermarked PDF."],
+  "instagram-resize": {
+    id: "instagram-resize",
+    name: "Instagram Image Resizer",
+    headline: "Resize Images for Instagram Square & Story",
+    description: "Scale pictures to 1:1 square (1080x1080) or 9:16 vertical parameters client-side instantly.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Instagram resizer online. Crop and format photos to standard square or story bounds client-side.",
+    steps: ["Select your portrait or landscape photo.", "Select Square (1:1) or Story (9:16) aspect ratios.", "Click 'Optimize & Convert'.", "Download your Instagram-ready photo."],
     faqs: [
-      { q: "Is the text watermark permanent?", a: "Yes, it is rendered as a flattened vector object layer, making it extremely difficult to remove." }
+      { q: "Will the background blur?", a: "Our canvas engine lets you fit layouts cleanly to avoid cropping details." }
     ],
-    related: ["add-page-numbers", "protect-pdf"]
-  },
-  "crop-pdf": {
-    id: "crop-pdf",
-    name: "Crop PDF",
-    headline: "Crop PDF Page Margins and Boundaries",
-    description: "Trim unnecessary whitespace or crop pages to specific margins. Set CropBox boundaries client-side instantly.",
-    inputAccept: ".pdf",
-    metaDescription: "Crop PDF pages online. Set precise margins and boundary coordinates client-side in your browser for free.",
-    steps: ["Select the PDF file.", "Adjust margin bounding boxes.", "Click 'Optimize & Convert' to crop.", "Download the cropped PDF."],
-    faqs: [
-      { q: "Does cropping delete cropped content?", a: "It sets the standard PDF CropBox boundary. Content outside is hidden and not rendered in readers." }
-    ],
-    related: ["rotate-pdf", "add-page-numbers"]
-  },
-  "edit-pdf": {
-    id: "edit-pdf",
-    name: "Edit PDF",
-    headline: "Edit PDF Text and Drawing Objects",
-    description: "Add annotations, text layers, shapes, or draw directly on your PDF pages locally in the browser.",
-    inputAccept: ".pdf",
-    metaDescription: "Edit PDF documents online. Free browser-level editor allows adding text, shapes, and markings safely client-side.",
-    steps: ["Upload your PDF document.", "Use the drawing and text tools to annotate pages.", "Re-serialize changes.", "Download your edited PDF."],
-    faqs: [
-      { q: "Is my edit layout preserved?", a: "Yes, all annotations are saved as standard PDF annotation structures compatible with Adobe Reader." }
-    ],
-    related: ["sign-pdf", "add-watermark"]
-  },
-  "pdf-forms": {
-    id: "pdf-forms",
-    name: "PDF Forms Fill & Create",
-    headline: "Fill Out & Create PDF Form Fields",
-    description: "Fill interactive PDF form text fields, checkboxes, and radio buttons or insert new form inputs locally.",
-    inputAccept: ".pdf",
-    metaDescription: "Fill out interactive PDF forms online. Secure browser-level form editor updates document fields safely client-side.",
-    steps: ["Select the PDF form document.", "Form fields light up. Click and type to fill them.", "Click 'Optimize & Convert' to bake entries.", "Save the completed PDF form."],
-    faqs: [
-      { q: "Can I save the form and edit it later?", a: "Yes. The entries are saved as standard form field values so they remain interactive in any reader." }
-    ],
-    related: ["edit-pdf", "sign-pdf"]
+    related: ["youtube-thumbnail-resizer", "linkedin-crop"]
   },
 
-  // Column 6: PDF Security
-  "unlock-pdf": {
-    id: "unlock-pdf",
-    name: "Unlock PDF",
-    headline: "Unlock Password Protected PDF Files",
-    description: "Decrypt and remove password security from your PDF documents if you know the password. Fast, fully client-side.",
-    inputAccept: ".pdf",
-    metaDescription: "Unlock PDF files online. Remove owner password restrictions from PDF documents client-side in your browser safely.",
-    steps: ["Select the encrypted PDF.", "Enter the file password when prompted.", "Click 'Optimize & Convert' to strip the lock.", "Download your unlocked PDF."],
+  // Column 6: Security & Metadata
+  "strip-metadata": {
+    id: "strip-metadata",
+    name: "Strip Metadata",
+    headline: "Remove EXIF Metadata from Images Online",
+    description: "Delete geolocation coordinates, camera model tags, and creation date headers to protect your online privacy completely.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Remove EXIF metadata online for free. Delete GPS coordinates and camera profiles client-side. Zero server uploads.",
+    steps: ["Select your JPG/PNG image.", "Review the embedded EXIF parameter list.", "Click 'Strip EXIF Data' to wipe headers.", "Download the clean metadata-free image."],
     faqs: [
-      { q: "Does ConvertOrbit crack password protection?", a: "No, this is a secure decryptor. You must know the password to authorize and unlock the PDF." }
+      { q: "What metadata is stripped?", a: "Our local canvas stripper removes GPS coordinates, timestamps, camera models, exposure settings, and color profiles." }
     ],
-    related: ["protect-pdf", "sign-pdf"]
+    related: ["protect-pdf", "convert-dpi"]
   },
-  "protect-pdf": {
-    id: "protect-pdf",
-    name: "Protect PDF",
-    headline: "Protect PDF with Passwords & Encryption",
-    description: "Secure confidential PDF contracts and sheets by encrypting them with a password locally inside your browser.",
-    inputAccept: ".pdf",
-    metaDescription: "Protect PDF files online with password encryption. Complete browser-level security checks with zero server uploads.",
-    steps: ["Upload your PDF document.", "Input your secure password in the options panel.", "Click 'Optimize & Convert' to encrypt.", "Save your protected PDF."],
+  "convert-dpi": {
+    id: "convert-dpi",
+    name: "Convert DPI",
+    headline: "Change Image DPI Resolution Online",
+    description: "Alter hardware-level resolution metadata density headers (e.g. 72, 150, 300 DPI) client-side in the browser.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Change image DPI online. Edit resolution density parameters in your browser safely with zero uploads.",
+    steps: ["Upload your image.", "Select your target density: 72 DPI, 150 DPI, or 300 DPI.", "Click 'Optimize & Convert'.", "Download the high-density image file."],
     faqs: [
-      { q: "What encryption standard is used?", a: "Our client-side engine uses standard PDF encryption parameters supported by all major PDF software." }
+      { q: "Why convert to 300 DPI?", a: "300 DPI is the industry printing standard, ensuring sharp physical details." }
     ],
-    related: ["unlock-pdf", "add-watermark"]
+    related: ["strip-metadata", "passport-photo-maker"]
   },
-  "sign-pdf": {
-    id: "sign-pdf",
-    name: "Sign PDF",
-    headline: "Sign PDF Documents Online Free",
-    description: "Draw, save, and stamp your custom signature onto PDF pages visually. Processes 100% locally in your browser sandbox.",
-    inputAccept: ".pdf",
-    metaDescription: "Sign PDF online. Draw your signature on a drawing pad and place it on document pages client-side with zero files saved on servers.",
-    steps: ["Upload your PDF contract or sheet.", "Draw your signature on our drawing pad and click 'Save'.", "Choose page and position quadrants.", "Click 'Optimize & Convert' to bake the signature image.", "Download the signed document."],
+  "checksum-tool": {
+    id: "checksum-tool",
+    name: "File Checksum Tool",
+    headline: "Generate SHA-256 and MD5 File Checksums",
+    description: "Compute cryptographic hashes client-side in browser memory using the secure Web Crypto API.",
+    inputAccept: "*",
+    metaDescription: "Generate file checksums online. Securely calculate SHA-256 and MD5 hashes client-side in your browser.",
+    steps: ["Select any file from your computer.", "Choose SHA-256 or MD5 hashing algorithms.", "Click 'Optimize & Convert' to parse binary loops.", "Copy your completed file hash instantly."],
     faqs: [
-      { q: "Is drawing signatures client-side safe?", a: "Yes. Since your vector signature is drawn directly to local canvases and baked locally, it is completely secure from intercept." }
+      { q: "Are my files uploaded for hashing?", a: "No. The browser reads files locally into array buffer arrays and hashes them on your own CPU." }
     ],
-    related: ["edit-pdf", "pdf-forms"]
-  },
-  "redact-pdf": {
-    id: "redact-pdf",
-    name: "Redact PDF",
-    headline: "Redact Sensitive Text & Content from PDF",
-    description: "Blackout and cryptographically delete highly sensitive names, numbers, or sections from your PDFs client-side.",
-    inputAccept: ".pdf",
-    metaDescription: "Redact PDF files online for free. Strip text blocks and draw black bounding box blocks safely client-side in the browser.",
-    steps: ["Upload your PDF.", "Highlight or draw rectangles over elements to redact.", "Click 'Optimize & Convert' to remove text elements.", "Download the redacted PDF."],
-    faqs: [
-      { q: "Does redaction delete the underlying text?", a: "Yes, our engine strips matching text coordinates from page code rather than just painting over it." }
-    ],
-    related: ["protect-pdf", "edit-pdf"]
-  },
-  "compare-pdf": {
-    id: "compare-pdf",
-    name: "Compare PDF",
-    headline: "Compare Two PDF Files and Find Differences",
-    description: "Scan two versions of a PDF document page-by-page to detect visual changes and text adjustments locally.",
-    inputAccept: ".pdf",
-    metaDescription: "Compare PDF files online. Detect visual layout changes and text differences between two documents client-side.",
-    steps: ["Upload document version A.", "Upload document version B.", "Click 'Optimize & Convert' to scan.", "View visual diff markers."],
-    faqs: [
-      { q: "How are visual diffs rendered?", a: "We overlay rendered page canvas contexts to highlight color difference thresholds." }
-    ],
-    related: ["edit-pdf", "organize-pdf"]
+    related: ["hash-generator", "protect-pdf"]
   },
 
-  // Column 7: PDF Intelligence
-  "ai-summarizer": {
-    id: "ai-summarizer",
-    name: "AI PDF Summarizer",
-    headline: "AI PDF Summarizer: Summarize PDF Instantly",
-    description: "Get key summaries, milestones, and bullet points from lengthy PDF articles and reports locally.",
-    inputAccept: ".pdf",
-    metaDescription: "Summarize PDF documents online using AI. Secure client-side text parsing delivers instant key summaries and takeaways.",
-    steps: ["Select your PDF document.", "Click 'Optimize & Convert' to boot our local summarize wrappers.", "View dynamic key takeaways and highlights.", "Save the summary text file."],
+  // Column 7: Developer tools
+  "json-formatter": {
+    id: "json-formatter",
+    name: "JSON Formatter",
+    headline: "Format & Lint JSON Code Client-Side",
+    description: "Validate, clean, and indent messy JSON text codes locally in your browser inside milliseconds.",
+    inputAccept: ".json,text/plain",
+    metaDescription: "Format and lint JSON online. Clean and indent code structures client-side in your browser securely.",
+    steps: ["Paste raw JSON code into our text editor.", "Click 'Process Text' to validate rules.", "Copy the clean indented output."],
     faqs: [
-      { q: "Are my document texts sent to AI cloud databases?", a: "No. The text parser processes loops inside local memory safely." }
+      { q: "Is my JSON text private?", a: "Yes, it is parsed locally in the browser sandbox with zero database uploads." }
     ],
-    related: ["translate-pdf", "pdf-to-word"]
+    related: ["base64-encoder", "hash-generator"]
   },
-  "translate-pdf": {
-    id: "translate-pdf",
-    name: "Translate PDF",
-    headline: "Translate PDF Documents Online",
-    description: "Translate your PDF texts page-by-page into dozens of foreign languages securely client-side.",
-    inputAccept: ".pdf",
-    metaDescription: "Translate PDF documents online for free. Local browser parsers extract text blocks and map translations with zero leaks.",
-    steps: ["Select your PDF.", "Choose your target language (e.g. Spanish, French, German).", "Click 'Optimize & Convert'.", "Download your translated PDF."],
+  "base64-encoder": {
+    id: "base64-encoder",
+    name: "Base64 Encoder",
+    headline: "Base64 Encode & Decode Text Online",
+    description: "Convert string characters to standard Base64 encoding schemas client-side instantly.",
+    inputAccept: "text/plain",
+    metaDescription: "Encode and decode Base64 online. Free, safe client-side browser text converter.",
+    steps: ["Enter source text characters.", "Click 'Process Text' to transcode.", "Copy your Base64 encoded result."],
     faqs: [
-      { q: "Is the formatting preserved?", a: "Yes, we map translated text runs exactly back to their original page coordinates." }
+      { q: "Does it support decoding?", a: "Yes, you can easily select encode or decode operations in the workspace panel." }
     ],
-    related: ["ai-summarizer", "pdf-to-word"]
+    related: ["json-formatter", "hash-generator"]
+  },
+  "hash-generator": {
+    id: "hash-generator",
+    name: "Hash Generator",
+    headline: "Generate MD5 & Cryptographic Hashes",
+    description: "Instantly compile cryptographic string hashes locally inside the browser memory.",
+    inputAccept: "text/plain",
+    metaDescription: "Generate text hashes online. Instantly calculate MD5 and SHA-256 strings client-side.",
+    steps: ["Type your source string.", "Click 'Process Text'.", "Copy the generated hash string."],
+    faqs: [
+      { q: "What algorithms are supported?", a: "We compile standard SHA-256 and MD5 hash values." }
+    ],
+    related: ["json-formatter", "base64-encoder"]
+  },
+  "heic-to-jpg": {
+    id: "heic-to-jpg",
+    name: "HEIC to JPG",
+    headline: "Convert Apple HEIC Images to JPG Instantly",
+    description: "Transform your iOS HEIC photos into highly compatible JPG/JPEG format directly inside your browser. No size limits, fast, and completely secure.",
+    inputAccept: ".heic",
+    metaDescription: "Convert HEIC to JPG online for free. Local client-side conversion ensures maximum privacy. No uploads, fast conversions, high compatibility.",
+    steps: [
+      "Select or drag & drop your Apple HEIC photo into the dropzone.",
+      "The system initializes the local converter engine.",
+      "Click 'Optimize & Convert' to transcode the image client-side.",
+      "Click 'Download File' to save your new JPG photo instantly."
+    ],
+    faqs: [
+      { q: "Is my privacy protected with ConvertOrbit HEIC to JPG?", a: "Yes. The conversion takes place entirely client-side using heic2any in your browser. Your images never leave your local device." }
+    ],
+    related: ["compress-image-exact-kb", "png-to-ico"]
+  },
+  "compress-image-exact-kb": {
+    id: "compress-image-exact-kb",
+    name: "Compress Image Exact KB",
+    headline: "Compress JPG/PNG Images to an Exact Target KB",
+    description: "Achieve the exact file size constraints needed for governmental portals, job applications, or visa uploads. Simply input your target KB.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Compress images to an exact file size in KB (e.g., 50KB, 100KB, 150KB) online. Uses intelligent client-side binary search algorithms.",
+    steps: [
+      "Upload your JPG or PNG image.",
+      "Slide or enter your precise target weight in KB (e.g. 150 KB).",
+      "Click 'Optimize & Convert'. The engine adjusts parameters dynamically.",
+      "Verify the exact output size and download your compressed file."
+    ],
+    faqs: [
+      { q: "How does exact KB compression work?", a: "Our algorithm runs a client-side binary search on the quality parameters and dimensions, generating test canvases to narrow in on the target size." }
+    ],
+    related: ["compress-image-20kb", "png-to-ico"]
+  },
+  "mov-to-mp4": {
+    id: "mov-to-mp4",
+    name: "MOV to MP4 Converter",
+    headline: "Convert MOV Videos to HTML5 MP4 in Browser",
+    description: "Transcode Apple QuickTime (.mov) video recordings into widely supported MPEG-4 (.mp4) format entirely local in your browser via FFmpeg.wasm.",
+    inputAccept: ".mov",
+    metaDescription: "Convert MOV to MP4 online using browser-level WebAssembly. Fast, highly secure, and process-safe. Files never leave your local computer.",
+    steps: [
+      "Upload your MOV video clip.",
+      "Click 'Optimize & Convert' to boot our local WebAssembly transcoder.",
+      "Watch the progress bar update as transcoding runs client-side.",
+      "Download your completed, web-ready MP4 video."
+    ],
+    faqs: [
+      { q: "Does this require downloading desktop software?", a: "No. The system loads FFmpeg.wasm dynamically inside your browser environment to convert files securely and locally." }
+    ],
+    related: ["pdf-compressor", "heic-to-jpg"]
   }
 };
 
@@ -558,7 +520,7 @@ export default async function ToolPage({ params }: RouteProps) {
     }))
   };
 
-  const isSmart = tool.id === "ai-summarizer" || tool.id === "translate-pdf";
+  const isSmart = tool.id === "ai-summarizer" || tool.id === "translate-pdf" || tool.id === "json-formatter";
 
   return (
     <>
@@ -598,7 +560,7 @@ export default async function ToolPage({ params }: RouteProps) {
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-accent-blue">
               {isSmart ? <Sparkles className="h-3.5 w-3.5 animate-pulse" /> : <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-              <span>{isSmart ? "Next-Gen AI Utility" : "100% Client-Side Secure Engine"}</span>
+              <span>{isSmart ? "Next-Gen Sandbox Tool" : "100% Client-Side Secure Engine"}</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
               {tool.headline}

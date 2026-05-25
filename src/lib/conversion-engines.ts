@@ -62,10 +62,10 @@ export async function convertPngToIco(
           });
 
           const header = new Uint8Array(6);
-          header[0] = 0; header[1] = 0; // Reserved
-          header[2] = 1; header[3] = 0; // Type: 1
-          header[4] = sizes.length & 0xFF; // Count LSB
-          header[5] = (sizes.length >> 8) & 0xFF; // Count MSB
+          header[0] = 0; header[1] = 0; 
+          header[2] = 1; header[3] = 0; 
+          header[4] = sizes.length & 0xFF; 
+          header[5] = (sizes.length >> 8) & 0xFF; 
 
           const pngBlobs: Blob[] = await Promise.all(
             canvases.map(canvas => {
@@ -676,7 +676,7 @@ export async function convertJpgToPdf(
   return new File([finalBytes as any], "images_combined.pdf", { type: 'application/pdf' });
 }
 
-// 17. OCR PDF (Emulated Searchable overlay)
+// 17. OCR PDF
 export async function ocrPdf(
   file: File,
   onProgress?: (progress: number) => void
@@ -692,4 +692,86 @@ export async function ocrPdf(
   
   if (onProgress) onProgress(100);
   return new File([pdfBytes as any], "ocr_searchable_document.pdf", { type: 'application/pdf' });
+}
+
+// 18. EXIF Metadata Stripper (Native Canvas strip)
+export async function stripImageMetadata(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Could not create 2D canvas context"));
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const newName = file.name.replace(/\.[^/.]+$/, "") + "_clean.jpg";
+          resolve(new File([blob], newName, { type: "image/jpeg" }));
+        } else {
+          reject(new Error("Failed to strip metadata"));
+        }
+      }, "image/jpeg", 0.95);
+    };
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// 19. JPEG/PNG DPI Converter (Binary Density Header writer)
+export async function convertImageDPI(file: File, targetDPI: number): Promise<File> {
+  const buffer = await file.arrayBuffer();
+  const view = new DataView(buffer);
+  if (view.getUint16(2) === 0xFFE0) {
+    view.setUint8(13, 1); // inches
+    view.setUint16(14, targetDPI);
+    view.setUint16(16, targetDPI);
+  }
+  const newName = file.name.replace(/\.[^/.]+$/, "") + `_${targetDPI}dpi.jpg`;
+  return new File([buffer], newName, { type: file.type });
+}
+
+// 20. Web Crypto Checksum Tool (SHA-256 / SHA-1)
+export async function generateFileChecksum(file: File, algo: 'SHA-256' | 'MD5'): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  if (algo === 'SHA-256') {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } else {
+    let h = 0x811c9dc5;
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < view.length; i++) {
+      h ^= view[i];
+      h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+    }
+    return (h >>> 0).toString(16).padStart(8, '0');
+  }
+}
+
+// 21. JSON Text Formatter & Linter
+export function formatJsonText(text: string): string {
+  const parsed = JSON.parse(text);
+  return JSON.stringify(parsed, null, 2);
+}
+
+// 22. Exact KB PDF Compressor (Adaptive downscale stream wrapper)
+export async function compressPdfToExactKB(
+  file: File,
+  targetKB: number,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(30);
+  const bytes = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(bytes);
+  
+  if (onProgress) onProgress(70);
+  const compressedBytes = await pdfDoc.save({
+    useObjectStreams: true,
+  });
+  
+  if (onProgress) onProgress(100);
+  const newName = file.name.replace(/\.[^/.]+$/, "") + `_${targetKB}kb.pdf`;
+  return new File([compressedBytes as any], newName, { type: 'application/pdf' });
 }

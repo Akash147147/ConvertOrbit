@@ -13,56 +13,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const tools = [
-    // Organize
+    // Exact compressors
+    "compress-image-20kb",
+    "compress-image-50kb",
+    "compress-image-100kb",
+    "signature-resize-20kb",
+    "compress-pdf-100kb",
+    "compress-pdf-500kb",
+
+    // Passport / Sizing
+    "passport-photo-maker",
+    "visa-photo-maker",
+    "heic-to-jpg",
+    "compress-image-exact-kb",
+    "mov-to-mp4",
+
+    // Social crop
+    "youtube-thumbnail-resizer",
+    "linkedin-crop",
+    "instagram-resize",
+
+    // Advanced PDF
     "merge-pdf",
     "split-pdf",
     "remove-pages",
-    "extract-pages",
     "organize-pdf",
-    "scan-to-pdf",
-    
-    // Optimize
     "pdf-compressor",
-    "repair-pdf",
     "ocr-pdf",
-    
-    // Convert to
-    "jpg-to-pdf",
-    "word-to-pdf",
-    "ppt-to-pdf",
-    "excel-to-pdf",
-    "html-to-pdf",
-    
-    // Convert from
-    "pdf-to-jpg",
-    "pdf-to-word",
-    "pdf-to-ppt",
-    "pdf-to-excel",
-    "pdf-to-pdfa",
-    
-    // Edit
-    "rotate-pdf",
-    "add-page-numbers",
-    "add-watermark",
-    "crop-pdf",
-    "edit-pdf",
-    "pdf-forms",
-    
-    // Security
-    "unlock-pdf",
+
+    // Security / Metadata
+    "strip-metadata",
+    "convert-dpi",
+    "checksum-tool",
     "protect-pdf",
     "sign-pdf",
-    "redact-pdf",
-    "compare-pdf",
-    
-    // Intelligence
-    "ai-summarizer",
-    "translate-pdf",
 
-    // Image/Video utilities
-    "heic-to-jpg",
-    "compress-image-exact-kb",
-    "mov-to-mp4"
+    // Developer utilities
+    "json-formatter",
+    "base64-encoder",
+    "hash-generator"
   ];
 
   const toolPaths = tools.map((tool) => ({

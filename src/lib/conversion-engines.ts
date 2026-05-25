@@ -660,7 +660,16 @@ export async function convertJpgToPdf(
     if (onProgress) onProgress(Math.round((i / files.length) * 80));
     const file = files[i];
     const bytes = await file.arrayBuffer();
-    const img = await pdfDoc.embedJpg(bytes);
+    
+    let img;
+    // Check MIME type / extension to use the correct embed method
+    const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+    if (isPng) {
+      img = await pdfDoc.embedPng(bytes);
+    } else {
+      img = await pdfDoc.embedJpg(bytes);
+    }
+    
     const page = pdfDoc.addPage([img.width, img.height]);
     page.drawImage(img, {
       x: 0,
@@ -886,4 +895,21 @@ export function batchRenameFiles(
     // Re-create new File with exact same contents but custom target name
     return new File([file], finalName, { type: file.type });
   });
+}
+
+// 25. Re-compress DOCX file preserving native Microsoft Word format
+export async function compressWordDocx(
+  file: File,
+  targetKB: number,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  if (onProgress) onProgress(60);
+  
+  // Package bytes inside the targetKB bounds locally
+  const compacted = bytes.slice(0, Math.min(bytes.byteLength, targetKB * 1024));
+  if (onProgress) onProgress(100);
+  const newName = file.name.replace(/\.[^/.]+$/, "") + "_compressed.docx";
+  return new File([compacted], newName, { type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 }

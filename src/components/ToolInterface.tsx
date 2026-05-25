@@ -16,7 +16,8 @@ import {
   addPdfPageNumbers, addPdfWatermark, protectPdf, signPdf, 
   convertJpgToPdf, ocrPdf, stripImageMetadata, convertImageDPI,
   generateFileChecksum, formatJsonText, compressPdfToExactKB,
-  readImageDetails, batchRenameFiles, type AnalyzedFileDetails
+  readImageDetails, batchRenameFiles, type AnalyzedFileDetails,
+  compressWordDocx
 } from "@/lib/conversion-engines";
 
 interface ToolInterfaceProps {
@@ -47,6 +48,9 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
   // Government templates sizing
   const [govTemplate, setGovTemplate] = useState<string>("custom");
   const [optimizationPreset, setOptimizationPreset] = useState<string>("custom");
+
+  // Target output format selector ("original" preserves source format)
+  const [targetFormat, setTargetFormat] = useState<string>("original");
 
   // Custom tool options
   const [targetKB, setTargetKB] = useState(150);
@@ -165,6 +169,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
     setResultFile(null);
     setProgress(0);
     setErrorMessage("");
+    setTargetFormat("original");
   };
 
   const executeConversion = async () => {
@@ -247,17 +252,38 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
           if (!primaryFile) throw new Error("Please upload a file to analyze first.");
           const ext = primaryFile.name.split('.').pop()?.toLowerCase();
           if (ext === "heic") {
+            // HEIC always converts to JPG (no native HEIC compression possible in browser)
             output = await convertHeicToJpg(primaryFile, setProgress);
           } else if (ext === "pdf") {
-            output = await compressPdfToExactKB(primaryFile, targetKB, setProgress);
+            if (targetFormat === "docx") {
+              output = await convertPdfToWord(primaryFile, setProgress);
+            } else {
+              // Default: compress PDF preserving format
+              output = await compressPdfToExactKB(primaryFile, targetKB, setProgress);
+            }
           } else if (["png", "jpg", "jpeg"].includes(ext || "")) {
-            output = await compressImageExactKB(primaryFile, targetKB, setProgress);
+            if (targetFormat === "ico") {
+              output = await convertPngToIco(primaryFile, icoSizes);
+              setProgress(100);
+            } else if (targetFormat === "pdf") {
+              output = await convertJpgToPdf([primaryFile], setProgress);
+            } else {
+              // Default: compress image preserving format
+              output = await compressImageExactKB(primaryFile, targetKB, setProgress);
+            }
           } else if (ext === "mov") {
+            // MOV always converts to MP4 (no native MOV compression in browser)
             output = await convertMovToMp4(primaryFile, setProgress);
-          } else if (ext === "docx") {
-            output = await convertWordToPdf(primaryFile, setProgress);
+          } else if (ext === "docx" || ext === "doc") {
+            if (targetFormat === "pdf") {
+              // User explicitly chose PDF conversion
+              output = await convertWordToPdf(primaryFile, setProgress);
+            } else {
+              // Default: compress Word file preserving .docx format
+              output = await compressWordDocx(primaryFile, targetKB, setProgress);
+            }
           } else {
-            // General checksum fallback
+            // General checksum fallback for unsupported types
             setProgress(50);
             const checksum = await generateFileChecksum(primaryFile, checksumAlgo);
             setDevOutputText(checksum);
@@ -355,8 +381,23 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
           setProgress(100);
           setStatus("success");
           return;
+        // Missing tool handlers — route to the correct engine
+        case "organize-pdf":
+        case "rotate-pdf":
+          output = await rotatePdfPages(primaryFile, rotationDegrees, setProgress);
+          break;
+        case "extract-pages":
+          output = await splitPdf(primaryFile, rangeStr, setProgress);
+          break;
+        case "scan-to-pdf":
+          // Scan-to-PDF treats the uploaded image as a page to convert to PDF
+          output = await convertJpgToPdf([primaryFile], setProgress);
+          break;
+        case "add-page-numbers":
+          output = await addPdfPageNumbers(primaryFile, pageNumberPosition, setProgress);
+          break;
         default:
-          throw new Error("Invalid utility selected");
+          throw new Error("Invalid utility selected. Tool '" + toolId + "' is not recognized.");
       }
 
       setResultFile(output);
@@ -421,6 +462,16 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
     setSignatureDataUrl(null);
     setDevInputText("");
     setDevOutputText("");
+    setTargetFormat("original");
+    setIsBatchMode(false);
+    setBatchRenamePrefix("");
+    setBatchRenameSuffix("");
+    setBatchRenamePattern("");
+    setBatchStripMetadata(true);
+    setBatchResultFiles([]);
+    setGovTemplate("custom");
+    setOptimizationPreset("custom");
+    setFileDetails(null);
   };
 
   // Drawing Pad Handlers
@@ -683,6 +734,41 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                   <span>Configure Utility Parameters</span>
                 </div>
 
+                {/* Target Output Format Selector */}
+                {(() => {
+                  const fileExt = files[0]?.name.split('.').pop()?.toLowerCase();
+                  const formatOptions: { value: string; label: string }[] = [{ value: "original", label: `Keep Original (.${fileExt})` }];
+                  if (fileExt === "docx" || fileExt === "doc") formatOptions.push({ value: "pdf", label: "Convert to PDF (.pdf)" });
+                  if (fileExt === "pdf") formatOptions.push({ value: "docx", label: "Convert to Word (.docx)" });
+                  if (["png", "jpg", "jpeg"].includes(fileExt || "")) {
+                    formatOptions.push({ value: "ico", label: "Convert to Favicon (.ico)" });
+                    formatOptions.push({ value: "pdf", label: "Convert to PDF (.pdf)" });
+                  }
+                  if (fileExt === "heic") {
+                    // HEIC can only convert to JPG; override default
+                    formatOptions.length = 0;
+                    formatOptions.push({ value: "jpg", label: "Convert to JPG (.jpg)" });
+                  }
+                  if (fileExt === "mov") {
+                    formatOptions.length = 0;
+                    formatOptions.push({ value: "mp4", label: "Convert to MP4 (.mp4)" });
+                  }
+                  return formatOptions.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-bold text-slate-700">Target Output Format</p>
+                      <select
+                        value={targetFormat}
+                        onChange={(e) => setTargetFormat(e.target.value)}
+                        className="w-full rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-accent-blue/50"
+                      >
+                        {formatOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null;
+                })()}
+
                 {/* Sizing presets engine */}
                 {files[0].type.startsWith("image/") && (
                   <div className="space-y-2">
@@ -756,7 +842,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                 )}
 
                 {/* Target size range sliders */}
-                {["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb"].includes(toolId) && (
+                {(["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb", "universal-dashboard"].includes(toolId) && targetFormat === "original") && (
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-slate-700">
                       <span>Target File Weight Limit</span>
@@ -774,6 +860,84 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                       }}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
                     />
+                  </div>
+                )}
+
+                {/* Rotation degrees for rotate-pdf/organize-pdf */}
+                {["rotate-pdf", "organize-pdf"].includes(toolId) && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Rotation Angle</label>
+                    <select
+                      value={rotationDegrees}
+                      onChange={(e) => setRotationDegrees(Number(e.target.value))}
+                      className="w-full rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                    >
+                      <option value={90}>90° Clockwise</option>
+                      <option value={180}>180°</option>
+                      <option value={270}>270° (90° Counter-Clockwise)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Page range input for split/remove/extract */}
+                {["split-pdf", "remove-pages", "extract-pages"].includes(toolId) && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Page Range</label>
+                    <input
+                      type="text"
+                      value={rangeStr}
+                      onChange={(e) => setRangeStr(e.target.value)}
+                      placeholder="e.g. 1-3, 5, 7"
+                      className="w-full rounded-xl border border-card-border bg-white py-2 px-3 text-xs font-bold outline-none focus:border-accent-blue/50"
+                    />
+                    <p className="text-[10px] text-slate-400 font-medium">Enter page numbers or ranges separated by commas</p>
+                  </div>
+                )}
+
+                {/* Page number position for add-page-numbers */}
+                {toolId === "add-page-numbers" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Page Number Position</label>
+                    <select
+                      value={pageNumberPosition}
+                      onChange={(e) => setPageNumberPosition(e.target.value as 'top' | 'bottom')}
+                      className="w-full rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                    >
+                      <option value="bottom">Bottom Center</option>
+                      <option value="top">Top Center</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* DPI selector for convert-dpi */}
+                {toolId === "convert-dpi" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Target DPI</label>
+                    <select
+                      value={imageDpi}
+                      onChange={(e) => setImageDpi(Number(e.target.value))}
+                      className="w-full rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                    >
+                      <option value={72}>72 DPI (Screen)</option>
+                      <option value={150}>150 DPI (Web)</option>
+                      <option value={300}>300 DPI (Print Quality)</option>
+                      <option value={600}>600 DPI (High Resolution Print)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Checksum algorithm selector */}
+                {toolId === "checksum-tool" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Hash Algorithm</label>
+                    <select
+                      value={checksumAlgo}
+                      onChange={(e) => setChecksumAlgo(e.target.value as 'SHA-256' | 'MD5')}
+                      className="w-full rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                    >
+                      <option value="SHA-256">SHA-256 (Recommended)</option>
+                      <option value="MD5">MD5</option>
+                    </select>
                   </div>
                 )}
 
@@ -816,6 +980,55 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                         value={watermarkOpacity}
                         onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
                         className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Signature Drawing Canvas for sign-pdf tool */}
+                {toolId === "sign-pdf" && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold text-slate-700">Draw Your Signature</p>
+                    <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-white">
+                      <canvas
+                        ref={sigCanvasRef}
+                        width={400}
+                        height={150}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        className="w-full cursor-crosshair touch-none"
+                        style={{ height: 150 }}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={clearSignature}
+                        className="flex-1 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        Clear Pad
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveSignature}
+                        className="flex-1 py-2 rounded-xl bg-accent-blue text-white text-xs font-bold hover:bg-blue-700 transition-colors"
+                      >
+                        {signatureDataUrl ? "✓ Signature Saved" : "Save Signature"}
+                      </button>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-600">Page Number to Sign (0-indexed)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={signPageIndex}
+                        onChange={(e) => setSignPageIndex(Number(e.target.value))}
+                        className="w-full rounded-xl border border-card-border bg-white py-2 px-3 text-xs font-bold outline-none focus:border-accent-blue/50"
                       />
                     </div>
                   </div>

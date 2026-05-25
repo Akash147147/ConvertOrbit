@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { useAnimate, motion } from "framer-motion";
+import React, { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { 
   Upload, File, CheckCircle2, Download, AlertCircle, 
-  RefreshCw, Settings, Sliders, Layers, ChevronRight 
+  RefreshCw, Settings, Layers, ChevronRight, Type, 
+  ShieldAlert, Sparkles, Image as ImageIcon, Plus, 
+  Trash2, MoveUp, MoveDown, Compass, Lock, Edit3
 } from "lucide-react";
 import { 
   convertHeicToJpg, convertPngToIco, compressImageExactKB, 
-  compressPdf, convertMovToMp4, convertWordToPdf, convertPdfToWord 
+  compressPdf, convertMovToMp4, convertWordToPdf, convertPdfToWord,
+  mergePdfs, splitPdf, removePdfPages, rotatePdfPages, 
+  addPdfPageNumbers, addPdfWatermark, protectPdf, signPdf, 
+  convertJpgToPdf, ocrPdf
 } from "@/lib/conversion-engines";
 
 interface ToolInterfaceProps {
@@ -18,23 +23,38 @@ interface ToolInterfaceProps {
 }
 
 export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInterfaceProps) {
-  const [file, setFile] = useState<File | null>(null);
+  // Support single file and multi-file states
+  const [files, setFiles] = useState<File[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
   const [status, setStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [progress, setProgress] = useState(0);
   const [resultFile, setResultFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   
-  // Custom tool options
+  // Dynamic tool configurations
   const [targetKB, setTargetKB] = useState(150);
   const [icoSizes, setIcoSizes] = useState<number[]>([16, 32, 48, 64]);
   const [pdfQuality, setPdfQuality] = useState<'low' | 'medium' | 'high'>('medium');
+  const [rangeStr, setRangeStr] = useState("1-3");
+  const [rotationDegrees, setRotationDegrees] = useState(90);
+  const [pageNumberPosition, setPageNumberPosition] = useState<'top' | 'bottom'>('bottom');
+  const [watermarkText, setWatermarkText] = useState("CONFIDENTIAL");
+  const [watermarkOpacity, setWatermarkOpacity] = useState(0.3);
+  const [pdfPassword, setPdfPassword] = useState("");
+  
+  // Custom interactive signature canvas states
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [signPageIndex, setSignPageIndex] = useState(0);
+  const sigCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  // Check for preloaded file from homepage auto-routing
+  useEffect(() => {
     if (typeof window !== "undefined" && (window as any).__preloadedFile) {
-      validateAndSetFile((window as any).__preloadedFile);
+      const pFile = (window as any).__preloadedFile;
+      setFiles([pFile]);
       delete (window as any).__preloadedFile;
     }
   }, []);
@@ -49,25 +69,37 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
     }
   };
 
+  const isMultiFileUpload = toolId === "merge-pdf" || toolId === "jpg-to-pdf";
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      validateAndSetFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const incoming = Array.from(e.dataTransfer.files);
+      if (isMultiFileUpload) {
+        setFiles(prev => [...prev, ...incoming]);
+      } else {
+        setFiles([incoming[0]]);
+      }
+      resetStateOnly();
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      validateAndSetFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      const incoming = Array.from(e.target.files);
+      if (isMultiFileUpload) {
+        setFiles(prev => [...prev, ...incoming]);
+      } else {
+        setFiles([incoming[0]]);
+      }
+      resetStateOnly();
     }
   };
 
-  const validateAndSetFile = (selectedFile: File) => {
-    // Basic type boundary validations
-    setFile(selectedFile);
+  const resetStateOnly = () => {
     setStatus("idle");
     setResultFile(null);
     setProgress(0);
@@ -75,7 +107,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
   };
 
   const executeConversion = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
 
     setStatus("processing");
     setProgress(5);
@@ -83,40 +115,77 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
 
     try {
       let output: File;
+      const primaryFile = files[0];
 
       switch (toolId) {
+        // Core 7 tools
         case "heic-to-jpg":
-          output = await convertHeicToJpg(file, setProgress);
+          output = await convertHeicToJpg(primaryFile, setProgress);
           break;
         case "png-to-ico":
           setProgress(30);
-          output = await convertPngToIco(file, icoSizes);
+          output = await convertPngToIco(primaryFile, icoSizes);
           setProgress(100);
           break;
         case "compress-image-exact-kb":
-          output = await compressImageExactKB(file, targetKB, setProgress);
+          output = await compressImageExactKB(primaryFile, targetKB, setProgress);
           break;
         case "pdf-compressor":
-          output = await compressPdf(file, pdfQuality, setProgress);
+          output = await compressPdf(primaryFile, pdfQuality, setProgress);
           break;
         case "mov-to-mp4":
-          output = await convertMovToMp4(file, setProgress);
+          output = await convertMovToMp4(primaryFile, setProgress);
           break;
         case "word-to-pdf":
-          output = await convertWordToPdf(file, setProgress);
+          output = await convertWordToPdf(primaryFile, setProgress);
           break;
         case "pdf-to-word":
-          output = await convertPdfToWord(file, setProgress);
+          output = await convertPdfToWord(primaryFile, setProgress);
+          break;
+          
+        // Expanded iLovePDF parity tools
+        case "merge-pdf":
+          output = await mergePdfs(files, setProgress);
+          break;
+        case "split-pdf":
+          output = await splitPdf(primaryFile, rangeStr, setProgress);
+          break;
+        case "remove-pages":
+          output = await removePdfPages(primaryFile, rangeStr, setProgress);
+          break;
+        case "rotate-pdf":
+          output = await rotatePdfPages(primaryFile, rotationDegrees, setProgress);
+          break;
+        case "add-page-numbers":
+          output = await addPdfPageNumbers(primaryFile, pageNumberPosition, setProgress);
+          break;
+        case "add-watermark":
+          output = await addPdfWatermark(primaryFile, watermarkText, watermarkOpacity, setProgress);
+          break;
+        case "protect-pdf":
+          if (!pdfPassword) throw new Error("Please configure a security password to protect your document.");
+          output = await protectPdf(primaryFile, pdfPassword, setProgress);
+          break;
+        case "sign-pdf":
+          if (!signatureDataUrl) throw new Error("Please draw and save your custom signature first.");
+          // Place at standard center-bottom quadrant coordinates
+          output = await signPdf(primaryFile, signatureDataUrl, signPageIndex, 100, 50, 150, 60, setProgress);
+          break;
+        case "jpg-to-pdf":
+          output = await convertJpgToPdf(files, setProgress);
+          break;
+        case "ocr-pdf":
+          output = await ocrPdf(primaryFile, setProgress);
           break;
         default:
-          throw new Error("Invalid tool selected");
+          throw new Error("Invalid utility engine selected");
       }
 
       setResultFile(output);
       setStatus("success");
     } catch (err: any) {
       console.error(err);
-      setErrorMessage(err.message || "An unexpected error occurred during processing. Please try again.");
+      setErrorMessage(err.message || "A browser local operation error occurred. Please verify your files and try again.");
       setStatus("error");
     }
   };
@@ -133,12 +202,89 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
     URL.revokeObjectURL(url);
   };
 
-  const resetTool = () => {
-    setFile(null);
+  const removeFile = (idx: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== idx));
+    resetStateOnly();
+  };
+
+  const moveFile = (idx: number, dir: 'up' | 'down') => {
+    if (dir === 'up' && idx === 0) return;
+    if (dir === 'down' && idx === files.length - 1) return;
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+    const array = [...files];
+    const temp = array[idx];
+    array[idx] = array[targetIdx];
+    array[targetIdx] = temp;
+    setFiles(array);
+  };
+
+  const resetAll = () => {
+    setFiles([]);
     setResultFile(null);
     setStatus("idle");
     setProgress(0);
     setErrorMessage("");
+    setSignatureDataUrl(null);
+  };
+
+  // Drawing Pad Handlers
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    setIsDrawing(true);
+    ctx.beginPath();
+    const pos = getPos(e);
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#0f172a";
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const getPos = (e: any) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  };
+
+  const clearSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureDataUrl(null);
+  };
+
+  const saveSignature = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL("image/png");
+    setSignatureDataUrl(dataUrl);
   };
 
   const formatBytes = (bytes: number, decimals = 2) => {
@@ -152,7 +298,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
 
   return (
     <div className="w-full max-w-3xl mx-auto bg-white border border-card-border rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-100">
-      {status === "idle" && !file && (
+      {status === "idle" && (files.length === 0 || (isMultiFileUpload && files.length < 1)) && (
         <div
           onDragEnter={handleDrag}
           onDragOver={handleDrag}
@@ -170,13 +316,14 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
             ref={fileInputRef}
             onChange={handleFileInput}
             accept={inputAccept}
+            multiple={isMultiFileUpload}
             className="hidden"
           />
           <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-md border border-slate-100 mb-4 transition-transform duration-300 hover:scale-105">
             <Upload className="h-6 w-6 text-accent-blue" />
           </div>
           <p className="text-base font-bold text-slate-800">
-            Drag & drop file here, or <span className="text-accent-blue hover:underline">browse</span>
+            Drag & drop file{isMultiFileUpload ? "s" : ""} here, or <span className="text-accent-blue hover:underline">browse</span>
           </p>
           <p className="text-xs text-slate-400 mt-2 font-medium">
             Supported formats: {inputAccept.replace(/\./g, " ").toUpperCase()}
@@ -187,30 +334,65 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
         </div>
       )}
 
-      {file && status !== "success" && (
+      {files.length > 0 && status !== "success" && (
         <div className="space-y-6">
-          {/* File Card */}
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-accent-blue">
-                <File className="h-5 w-5" />
+          {/* Files List panel */}
+          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+            {files.map((file, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-accent-blue shrink-0">
+                    <File className="h-4.5 w-4.5" />
+                  </div>
+                  <div className="min-w-0 max-w-[220px] sm:max-w-[450px]">
+                    <p className="text-xs font-bold text-slate-800 truncate">{file.name}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">{formatBytes(file.size)}</p>
+                  </div>
+                </div>
+                {status !== "processing" && (
+                  <div className="flex items-center gap-1">
+                    {isMultiFileUpload && (
+                      <>
+                        <button
+                          onClick={() => moveFile(idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1 rounded hover:bg-slate-200 text-slate-400 disabled:opacity-30"
+                        >
+                          <MoveUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => moveFile(idx, 'down')}
+                          disabled={idx === files.length - 1}
+                          className="p-1 rounded hover:bg-slate-200 text-slate-400 disabled:opacity-30"
+                        >
+                          <MoveDown className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => removeFile(idx)}
+                      className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="max-w-[200px] sm:max-w-[350px]">
-                <p className="text-sm font-bold text-slate-800 truncate">{file.name}</p>
-                <p className="text-xs text-slate-400 font-medium">{formatBytes(file.size)}</p>
-              </div>
-            </div>
-            {status !== "processing" && (
-              <button
-                onClick={resetTool}
-                className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors hover:underline px-2 py-1"
-              >
-                Remove
-              </button>
-            )}
+            ))}
           </div>
 
-          {/* Config options */}
+          {/* Quick upload supplementary trigger */}
+          {isMultiFileUpload && status !== "processing" && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 hover:border-accent-blue/30 text-xs font-bold text-slate-500 hover:text-accent-blue hover:bg-blue-50/10 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add More Files</span>
+            </button>
+          )}
+
+          {/* Detailed Config Options */}
           {status !== "processing" && (
             <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -233,86 +415,230 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                     onChange={(e) => setTargetKB(Number(e.target.value))}
                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
-                    <span>10 KB</span>
-                    <span>500 KB</span>
-                    <span>1000 KB</span>
-                  </div>
                 </div>
               )}
 
               {toolId === "png-to-ico" && (
-                <div className="space-y-3">
-                  <p className="text-sm font-bold text-slate-700">Included Icon Sizes</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[16, 32, 48, 64, 128, 256].map((size) => {
-                      const active = icoSizes.includes(size);
-                      return (
-                        <button
-                          key={size}
-                          onClick={() => {
-                            if (active) {
-                              if (icoSizes.length > 1) {
-                                setIcoSizes(icoSizes.filter(s => s !== size));
-                              }
-                            } else {
-                              setIcoSizes([...icoSizes, size].sort((a,b) => a - b));
-                            }
-                          }}
-                          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
-                            active 
-                              ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" 
-                              : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                          }`}
-                        >
-                          <Layers className="h-3.5 w-3.5" />
-                          <span>{size}x{size}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[16, 32, 48, 64, 128, 256].map((size) => {
+                    const active = icoSizes.includes(size);
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => {
+                          if (active) {
+                            if (icoSizes.length > 1) setIcoSizes(icoSizes.filter(s => s !== size));
+                          } else {
+                            setIcoSizes([...icoSizes, size].sort((a,b) => a - b));
+                          }
+                        }}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                          active ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                        }`}
+                      >
+                        {size}x{size}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
               {toolId === "pdf-compressor" && (
-                <div className="space-y-3">
-                  <p className="text-sm font-bold text-slate-700">Optimization Preset</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { id: 'low', label: 'Max Quality', desc: 'Minimal compression' },
-                      { id: 'medium', label: 'Balanced', desc: 'Optimal size & quality' },
-                      { id: 'high', label: 'Max Size', desc: 'Maximum compression' }
-                    ].map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => setPdfQuality(opt.id as any)}
-                        className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
-                          pdfQuality === opt.id 
-                            ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" 
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
-                        }`}
-                      >
-                        <span className="text-xs font-extrabold">{opt.label}</span>
-                        <span className="text-[10px] text-slate-400 mt-0.5">{opt.desc}</span>
-                      </button>
-                    ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    { id: 'low', label: 'Max Quality', desc: 'Minimal compression' },
+                    { id: 'medium', label: 'Balanced', desc: 'Optimal size & quality' },
+                    { id: 'high', label: 'Max Size', desc: 'Maximum compression' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setPdfQuality(opt.id as any)}
+                      className={`flex flex-col p-3 rounded-xl border text-left transition-all ${
+                        pdfQuality === opt.id ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                      }`}
+                    >
+                      <span className="text-xs font-extrabold">{opt.label}</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Range settings for split/remove tools */}
+              {(toolId === "split-pdf" || toolId === "remove-pages") && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600">Configure Page Ranges</label>
+                  <input
+                    type="text"
+                    value={rangeStr}
+                    onChange={(e) => setRangeStr(e.target.value)}
+                    placeholder="e.g. 1-3, 5, 8-10"
+                    className="w-full rounded-xl border border-card-border bg-white py-2 px-3.5 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/5"
+                  />
+                  <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                    Use commas to separate page numbers and hyphens for consecutive sequences.
+                  </p>
+                </div>
+              )}
+
+              {/* Rotates angle selector */}
+              {toolId === "rotate-pdf" && (
+                <div className="grid grid-cols-3 gap-2">
+                  {[90, 180, 270].map((deg) => (
+                    <button
+                      key={deg}
+                      onClick={() => setRotationDegrees(deg)}
+                      className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                        rotationDegrees === deg ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                      }`}
+                    >
+                      <Compass className="h-4 w-4 rotate-90" />
+                      <span>{deg}°</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Page Numbers position */}
+              {toolId === "add-page-numbers" && (
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'bottom', label: 'Bottom Center' },
+                    { id: 'top', label: 'Top Center' }
+                  ].map((pos) => (
+                    <button
+                      key={pos.id}
+                      onClick={() => setPageNumberPosition(pos.id as any)}
+                      className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all ${
+                        pageNumberPosition === pos.id ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                      }`}
+                    >
+                      {pos.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Watermarks */}
+              {toolId === "add-watermark" && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Watermark Text</label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                        <Type className="h-4 w-4" />
+                      </span>
+                      <input
+                        type="text"
+                        value={watermarkText}
+                        onChange={(e) => setWatermarkText(e.target.value)}
+                        placeholder="e.g. CONFIDENTIAL"
+                        className="w-full rounded-xl border border-card-border bg-white py-2 pl-9 pr-4 text-sm font-semibold text-slate-800 outline-none focus:border-accent-blue/50"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 flex justify-between">
+                      <span>Opacity</span>
+                      <span className="text-accent-blue">{Math.round(watermarkOpacity * 100)}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1.0"
+                      step="0.05"
+                      value={watermarkOpacity}
+                      onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
+                    />
                   </div>
                 </div>
               )}
 
-              {toolId !== "compress-image-exact-kb" && toolId !== "png-to-ico" && toolId !== "pdf-compressor" && (
-                <p className="text-xs text-slate-500">This tool will convert your file with industry-standard settings for high fidelity results.</p>
+              {/* Security Password */}
+              {toolId === "protect-pdf" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600">Security Password</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                      <Lock className="h-4 w-4" />
+                    </span>
+                    <input
+                      type="password"
+                      value={pdfPassword}
+                      onChange={(e) => setPdfPassword(e.target.value)}
+                      placeholder="Enter password..."
+                      className="w-full rounded-xl border border-card-border bg-white py-2 pl-9 pr-4 text-sm font-semibold text-slate-800 outline-none focus:border-accent-blue/50"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Signature pad */}
+              {toolId === "sign-pdf" && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600 flex items-center justify-between">
+                      <span>Draw Your Signature Below</span>
+                      {signatureDataUrl && (
+                        <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Signature Saved</span>
+                        </span>
+                      )}
+                    </label>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 relative">
+                      <canvas
+                        ref={sigCanvasRef}
+                        width={400}
+                        height={120}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        className="w-full h-[120px] cursor-crosshair touch-none bg-white"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={clearSignature}
+                        className="flex-1 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={saveSignature}
+                        className="flex-1 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+                      >
+                        Save Signature
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Smart intelligence indicator */}
+              {toolId === "ocr-pdf" && (
+                <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 text-accent-blue shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-semibold">
+                    ConvertOrbit OCR scans underlying document structures locally and builds searchable vector page indices entirely client-side.
+                  </p>
+                </div>
               )}
             </div>
           )}
 
-          {/* Processing State */}
+          {/* Progress state */}
           {status === "processing" && (
             <div className="space-y-3">
               <div className="flex justify-between text-sm font-semibold text-slate-700">
                 <span className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4 animate-spin text-accent-blue" />
-                  <span>Processing file...</span>
+                  <span>Processing document client-side...</span>
                 </span>
                 <span>{progress}%</span>
               </div>
@@ -324,7 +650,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                   transition={{ ease: "easeOut" }}
                 />
               </div>
-              <p className="text-xs text-slate-400 text-center font-medium">Please do not close this browser tab.</p>
+              <p className="text-xs text-slate-400 text-center font-medium">Please keep this browser window open.</p>
             </div>
           )}
 
@@ -334,7 +660,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
               onClick={executeConversion}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-accent-blue to-accent-indigo text-white font-bold text-sm shadow-lg shadow-accent-blue/15 hover:shadow-accent-blue/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2"
             >
-              <span>Optimize & Convert</span>
+              <span>{toolId === "sign-pdf" ? "Embed Signature & Save" : "Optimize & Convert"}</span>
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
@@ -358,7 +684,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
         </div>
       )}
 
-      {/* Success View */}
+      {/* Success state */}
       {status === "success" && resultFile && (
         <div className="space-y-6 text-center py-6">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
@@ -366,26 +692,12 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-xl font-extrabold text-slate-800">Conversion Completed!</h3>
+            <h3 className="text-xl font-extrabold text-slate-800">Operation Completed!</h3>
             <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Your download is ready</p>
           </div>
 
-          {/* Comparison table */}
-          {file && (
-            <div className="max-w-md mx-auto p-4 bg-slate-50 border border-slate-100 rounded-2xl grid grid-cols-2 gap-4 divide-x divide-slate-200">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Original Size</p>
-                <p className="text-base font-bold text-slate-700 mt-1">{formatBytes(file.size)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Converted Size</p>
-                <p className="text-base font-bold text-emerald-600 mt-1">{formatBytes(resultFile.size)}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Download and reset buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+          {/* Download cards */}
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mt-6">
             <button
               onClick={downloadResult}
               className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-accent-blue to-accent-indigo text-white font-bold text-sm shadow-lg shadow-accent-blue/15 hover:shadow-accent-blue/25 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
@@ -394,11 +706,11 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
               <span>Download File</span>
             </button>
             <button
-              onClick={resetTool}
+              onClick={resetAll}
               className="py-4 px-6 rounded-2xl border border-slate-200 bg-white text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
             >
               <RefreshCw className="h-4 w-4" />
-              <span>Convert Another</span>
+              <span>Start Over</span>
             </button>
           </div>
         </div>

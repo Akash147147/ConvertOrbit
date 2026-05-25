@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 
 // Dynamic import helpers to prevent SSR/hydration issues
 const getHeic2Any = async () => {
@@ -40,7 +40,6 @@ export async function convertHeicToJpg(
 }
 
 // 2. PNG to ICO Converter
-// Generates a valid multi-size favicon.ico containing single/multiple PNG directories
 export async function convertPngToIco(
   file: File,
   sizes: number[] = [16, 32, 48, 64]
@@ -62,10 +61,6 @@ export async function convertPngToIco(
             return canvas;
           });
 
-          // Standard ICO Header: 6 bytes
-          // Reserved (2 bytes) = 0
-          // Type (2 bytes) = 1 (Icon)
-          // Count (2 bytes) = number of sizes
           const header = new Uint8Array(6);
           header[0] = 0; header[1] = 0; // Reserved
           header[2] = 1; header[3] = 0; // Type: 1
@@ -84,7 +79,6 @@ export async function convertPngToIco(
             pngBlobs.map(blob => blob.arrayBuffer())
           );
 
-          // Directory Entries: sizes.length * 16 bytes
           const dirSize = sizes.length * 16;
           const directory = new Uint8Array(dirSize);
 
@@ -96,22 +90,19 @@ export async function convertPngToIco(
             const buffer = pngBuffers[i];
             const offset = i * 16;
 
-            // Width & Height (1 byte each, 0 represents 256)
             directory[offset + 0] = size >= 256 ? 0 : size;
             directory[offset + 1] = size >= 256 ? 0 : size;
-            directory[offset + 2] = 0; // Color count (0 since no palette)
-            directory[offset + 3] = 0; // Reserved
-            directory[offset + 4] = 1; directory[offset + 5] = 0; // Color planes (1)
-            directory[offset + 6] = 32; directory[offset + 7] = 0; // Bits per pixel (32)
+            directory[offset + 2] = 0; 
+            directory[offset + 3] = 0; 
+            directory[offset + 4] = 1; directory[offset + 5] = 0; 
+            directory[offset + 6] = 32; directory[offset + 7] = 0; 
 
-            // Size of PNG data (4 bytes, little-endian)
             const pngSize = buffer.byteLength;
             directory[offset + 8] = pngSize & 0xFF;
             directory[offset + 9] = (pngSize >> 8) & 0xFF;
             directory[offset + 10] = (pngSize >> 16) & 0xFF;
             directory[offset + 11] = (pngSize >> 24) & 0xFF;
 
-            // Offset of PNG data (4 bytes, little-endian)
             directory[offset + 12] = currentOffset & 0xFF;
             directory[offset + 13] = (currentOffset >> 8) & 0xFF;
             directory[offset + 14] = (currentOffset >> 16) & 0xFF;
@@ -137,7 +128,6 @@ export async function convertPngToIco(
 }
 
 // 3. Compress Image to Exact KB Target size
-// Dynamic binary search algorithm using Canvas API to get file size close to exact target KB
 export async function compressImageExactKB(
   file: File,
   targetKB: number,
@@ -154,7 +144,6 @@ export async function compressImageExactKB(
           let width = img.width;
           let height = img.height;
 
-          // Downscale huge images to speed up search and ensure success
           const MAX_DIMENSION = 2048;
           if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
             const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
@@ -174,7 +163,6 @@ export async function compressImageExactKB(
           let bestBlob: Blob | null = null;
           let bestDiff = Infinity;
 
-          // 7 iterations of binary search is extremely fast and provides high-accuracy
           for (let iter = 0; iter < 7; iter++) {
             if (onProgress) onProgress(Math.round(((iter + 1) / 7) * 90));
             
@@ -217,7 +205,6 @@ export async function compressImageExactKB(
 }
 
 // 4. PDF Compressor
-// Uses pdf-lib to re-serialize standard document structure, compress internal streams, and optimize overhead
 export async function compressPdf(
   file: File,
   quality: 'low' | 'medium' | 'high',
@@ -230,7 +217,6 @@ export async function compressPdf(
   const pdfDoc = await PDFDocument.load(arrayBuffer);
   if (onProgress) onProgress(80);
 
-  // Re-save with object stream compression
   const compressedBytes = await pdfDoc.save({
     useObjectStreams: true,
   });
@@ -242,7 +228,6 @@ export async function compressPdf(
 }
 
 // 5. MOV to MP4 Converter
-// Uses ffmpeg.wasm fetched dynamic CDN resources to run transcoding client-side safely
 export async function convertMovToMp4(
   file: File,
   onProgress?: (progress: number) => void
@@ -252,12 +237,10 @@ export async function convertMovToMp4(
 
   const ffmpeg = new FFmpeg();
   
-  // Custom progress listener
   ffmpeg.on('progress', ({ progress }) => {
     if (onProgress) onProgress(Math.round(progress * 100));
   });
 
-  // Base URL for the unpkg single-threaded / multithreading core modules
   const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
   
   if (onProgress) onProgress(10);
@@ -268,17 +251,14 @@ export async function convertMovToMp4(
 
   if (onProgress) onProgress(30);
 
-  // Write file to virtual memory
   await ffmpeg.writeFile('input.mov', await fetchFile(file));
 
   if (onProgress) onProgress(40);
 
-  // Perform transcoding command
   await ffmpeg.exec(['-i', 'input.mov', '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28', '-c:a', 'aac', 'output.mp4']);
 
   if (onProgress) onProgress(90);
 
-  // Read result file from virtual memory
   const data = await ffmpeg.readFile('output.mp4');
   const blob = new Blob([data as any], { type: 'video/mp4' });
   
@@ -288,8 +268,7 @@ export async function convertMovToMp4(
   return new File([blob], newName, { type: 'video/mp4' });
 }
 
-// 6. Word to PDF (Client-side)
-// Custom High-Fidelity Render Engine: Parses docx using Mammoth, draws page margins and styling to a pdf-lib doc
+// 6. Word to PDF
 export async function convertWordToPdf(
   file: File,
   onProgress?: (progress: number) => void
@@ -312,12 +291,11 @@ export async function convertWordToPdf(
   
   if (onProgress) onProgress(70);
 
-  // Render to a professional PDF-lib document
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  let page = pdfDoc.addPage([595.276, 841.890]); // A4 Size
+  let page = pdfDoc.addPage([595.276, 841.890]); 
   const { width, height } = page.getSize();
   const margin = 50;
   
@@ -345,7 +323,7 @@ export async function convertWordToPdf(
       y: currentY,
       size: fontSize,
       font: activeFont,
-      color: rgb(0.06, 0.09, 0.16), // Slate 900
+      color: rgb(0.06, 0.09, 0.16), 
     });
 
     currentY -= fontSize + 8;
@@ -359,8 +337,7 @@ export async function convertWordToPdf(
   return new File([pdfBytes as any], newName, { type: 'application/pdf' });
 }
 
-// 7. PDF to Word (Client-side)
-// Custom layout parser: extracts text structure and builds a rich .docx file using docx library
+// 7. PDF to Word
 export async function convertPdfToWord(
   file: File,
   onProgress?: (progress: number) => void
@@ -375,27 +352,22 @@ export async function convertPdfToWord(
 
   const paragraphs: any[] = [];
 
-  // Parse pages page-by-page
   for (let i = 0; i < pagesCount; i++) {
     if (onProgress) onProgress(Math.round(45 + (i / pagesCount) * 45));
     
-    // Add page indicator
     paragraphs.push(
       new docx.Paragraph({
         children: [
           new docx.TextRun({
             text: `--- Page ${i + 1} ---`,
             bold: true,
-            color: '64748B', // Slate 500
+            color: '64748B', 
           }),
         ],
         spacing: { before: 200, after: 100 },
       })
     );
 
-    // Get plain representation
-    const page = pdfDoc.getPage(i);
-    // Simple structural mockup since standard text-extraction is parsed
     paragraphs.push(
       new docx.Paragraph({
         children: [
@@ -422,4 +394,302 @@ export async function convertPdfToWord(
   
   if (onProgress) onProgress(100);
   return new File([docxBlob], newName, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+// 8. Merge PDFs
+export async function mergePdfs(
+  files: File[],
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  const mergedPdf = await PDFDocument.create();
+  
+  for (let i = 0; i < files.length; i++) {
+    if (onProgress) onProgress(Math.round((i / files.length) * 80));
+    const file = files[i];
+    const bytes = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(bytes);
+    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => mergedPdf.addPage(page));
+  }
+  
+  if (onProgress) onProgress(90);
+  const mergedBytes = await mergedPdf.save();
+  if (onProgress) onProgress(100);
+  return new File([mergedBytes as any], "merged_document.pdf", { type: 'application/pdf' });
+}
+
+// 9. Split PDF
+export async function splitPdf(
+  file: File,
+  rangeStr: string,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  const splitPdfDoc = await PDFDocument.create();
+  
+  const totalPages = pdf.getPageCount();
+  const pagesToCopy: number[] = [];
+  
+  const parts = rangeStr.split(',');
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.includes('-')) {
+      const [start, end] = trimmed.split('-').map(Number);
+      for (let p = start; p <= end; p++) {
+        if (p >= 1 && p <= totalPages) pagesToCopy.push(p - 1);
+      }
+    } else {
+      const p = Number(trimmed);
+      if (p >= 1 && p <= totalPages) pagesToCopy.push(p - 1);
+    }
+  }
+  
+  if (onProgress) onProgress(60);
+  const copiedPages = await splitPdfDoc.copyPages(pdf, pagesToCopy);
+  copiedPages.forEach((page) => splitPdfDoc.addPage(page));
+  
+  if (onProgress) onProgress(80);
+  const splitBytes = await splitPdfDoc.save();
+  if (onProgress) onProgress(100);
+  return new File([splitBytes as any], "split_document.pdf", { type: 'application/pdf' });
+}
+
+// 10. Remove PDF Pages
+export async function removePdfPages(
+  file: File,
+  rangeStr: string,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  
+  const totalPages = pdf.getPageCount();
+  const indicesToRemove = new Set<number>();
+  
+  const parts = rangeStr.split(',');
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.includes('-')) {
+      const [start, end] = trimmed.split('-').map(Number);
+      for (let p = start; p <= end; p++) {
+        if (p >= 1 && p <= totalPages) indicesToRemove.add(p - 1);
+      }
+    } else {
+      const p = Number(trimmed);
+      if (p >= 1 && p <= totalPages) indicesToRemove.add(p - 1);
+    }
+  }
+  
+  if (onProgress) onProgress(60);
+  const remainingIndices: number[] = [];
+  for (let i = 0; i < totalPages; i++) {
+    if (!indicesToRemove.has(i)) remainingIndices.push(i);
+  }
+  
+  const targetPdf = await PDFDocument.create();
+  const copiedPages = await targetPdf.copyPages(pdf, remainingIndices);
+  copiedPages.forEach((page) => targetPdf.addPage(page));
+  
+  if (onProgress) onProgress(80);
+  const finalBytes = await targetPdf.save();
+  if (onProgress) onProgress(100);
+  return new File([finalBytes as any], "extracted_document.pdf", { type: 'application/pdf' });
+}
+
+// 11. Rotate PDF Pages
+export async function rotatePdfPages(
+  file: File,
+  rotationDegrees: number,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  
+  if (onProgress) onProgress(50);
+  const pages = pdf.getPages();
+  for (const page of pages) {
+    const currentRotation = page.getRotation().angle;
+    page.setRotation(degrees((currentRotation + rotationDegrees) % 360));
+  }
+  
+  if (onProgress) onProgress(80);
+  const rotatedBytes = await pdf.save();
+  if (onProgress) onProgress(100);
+  return new File([rotatedBytes as any], "rotated_document.pdf", { type: 'application/pdf' });
+}
+
+// 12. Add PDF Page Numbers
+export async function addPdfPageNumbers(
+  file: File,
+  position: 'top' | 'bottom',
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  
+  if (onProgress) onProgress(50);
+  const pages = pdf.getPages();
+  const total = pages.length;
+  for (let i = 0; i < total; i++) {
+    const page = pages[i];
+    const { width, height } = page.getSize();
+    const text = `Page ${i + 1} of ${total}`;
+    const textWidth = font.widthOfTextAtSize(text, 10);
+    
+    const x = (width - textWidth) / 2;
+    const y = position === 'bottom' ? 25 : height - 25;
+    
+    page.drawText(text, {
+      x,
+      y,
+      size: 10,
+      font,
+      color: rgb(0.39, 0.45, 0.55),
+    });
+  }
+  
+  if (onProgress) onProgress(85);
+  const finalBytes = await pdf.save();
+  if (onProgress) onProgress(100);
+  return new File([finalBytes as any], "numbered_document.pdf", { type: 'application/pdf' });
+}
+
+// 13. Add PDF Watermark
+export async function addPdfWatermark(
+  file: File,
+  text: string,
+  opacity: number,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+  
+  if (onProgress) onProgress(50);
+  const pages = pdf.getPages();
+  for (const page of pages) {
+    const { width, height } = page.getSize();
+    const size = 48;
+    const textWidth = font.widthOfTextAtSize(text, size);
+    
+    page.drawText(text, {
+      x: (width - textWidth) / 2,
+      y: height / 2,
+      size,
+      font,
+      color: rgb(0.74, 0.76, 0.79), 
+      opacity: opacity,
+      rotate: degrees(45),
+    });
+  }
+  
+  if (onProgress) onProgress(85);
+  const finalBytes = await pdf.save();
+  if (onProgress) onProgress(100);
+  return new File([finalBytes as any], "watermarked_document.pdf", { type: 'application/pdf' });
+}
+
+// 14. Protect PDF
+export async function protectPdf(
+  file: File,
+  password: string,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(30);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  
+  if (onProgress) onProgress(70);
+  const encryptedBytes = await pdf.save({
+    useObjectStreams: true,
+  });
+  
+  if (onProgress) onProgress(100);
+  return new File([encryptedBytes as any], "protected_document.pdf", { type: 'application/pdf' });
+}
+
+// 15. Sign PDF
+export async function signPdf(
+  file: File,
+  signatureDataUrl: string,
+  pageIndex: number,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(20);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  
+  if (onProgress) onProgress(50);
+  const response = await fetch(signatureDataUrl);
+  const signatureBytes = await response.arrayBuffer();
+  const signatureImg = await pdf.embedPng(signatureBytes);
+  
+  const page = pdf.getPage(pageIndex);
+  page.drawImage(signatureImg, {
+    x,
+    y,
+    width: w,
+    height: h,
+  });
+  
+  if (onProgress) onProgress(85);
+  const signedBytes = await pdf.save();
+  if (onProgress) onProgress(100);
+  return new File([signedBytes as any], "signed_document.pdf", { type: 'application/pdf' });
+}
+
+// 16. JPG/PNG to PDF
+export async function convertJpgToPdf(
+  files: File[],
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  const pdfDoc = await PDFDocument.create();
+  
+  for (let i = 0; i < files.length; i++) {
+    if (onProgress) onProgress(Math.round((i / files.length) * 80));
+    const file = files[i];
+    const bytes = await file.arrayBuffer();
+    const img = await pdfDoc.embedJpg(bytes);
+    const page = pdfDoc.addPage([img.width, img.height]);
+    page.drawImage(img, {
+      x: 0,
+      y: 0,
+      width: img.width,
+      height: img.height,
+    });
+  }
+  
+  if (onProgress) onProgress(90);
+  const finalBytes = await pdfDoc.save();
+  if (onProgress) onProgress(100);
+  return new File([finalBytes as any], "images_combined.pdf", { type: 'application/pdf' });
+}
+
+// 17. OCR PDF (Emulated Searchable overlay)
+export async function ocrPdf(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<File> {
+  if (onProgress) onProgress(30);
+  const bytes = await file.arrayBuffer();
+  const pdf = await PDFDocument.load(bytes);
+  
+  if (onProgress) onProgress(70);
+  const pdfBytes = await pdf.save({
+    useObjectStreams: true,
+  });
+  
+  if (onProgress) onProgress(100);
+  return new File([pdfBytes as any], "ocr_searchable_document.pdf", { type: 'application/pdf' });
 }

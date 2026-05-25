@@ -535,6 +535,24 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
       { q: "What image formats are supported?", a: "We support JPG, JPEG, and PNG image formats for PDF conversion." }
     ],
     related: ["merge-pdf", "compress-image-exact-kb"]
+  },
+  "universal-dashboard": {
+    id: "universal-dashboard",
+    name: "Universal File Dashboard",
+    headline: "Universal File Dashboard & Deep Sandbox Inspector",
+    description: "Analyze, inspect metadata EXIF segments, strip privacy coordinates, and run batch optimizations on HEIC, PDFs, PNGs, and videos. 100% in-browser sandboxed processing.",
+    inputAccept: "*",
+    metaDescription: "Universal File Dashboard online. Deep local browser sandbox to inspect metadata, strip EXIF details, and compress or optimize files securely with zero server uploads.",
+    steps: [
+      "Upload any file (image, PDF, video, or document).",
+      "Inspect detailed specifications: size, format, DPI, resolution, and EXIF segments.",
+      "Review the Smart Suggested Operations list based on MIME-type.",
+      "Execute quick actions or bulk configurations in a single click."
+    ],
+    faqs: [
+      { q: "Is the universal file inspection secure?", a: "Yes. All file analytical scanners and image properties checks are executed locally inside browser RAM memory sandbox. Absolutely zero network uploads." }
+    ],
+    related: ["compress-image-exact-kb", "pdf-compressor", "strip-metadata"]
   }
 };
 
@@ -554,16 +572,16 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
   if (!tool) return {};
 
   return {
-    title: `${tool.name} - 100% Free & Secure | ConvertOrbit`,
+    title: `${tool.name} - 100% Free & Secure | FileForge`,
     description: tool.metaDescription,
     alternates: {
       canonical: `https://convertorbit.com/tools/${tool.id}`,
     },
     openGraph: {
-      title: `${tool.name} - Instant Browser Utility | ConvertOrbit`,
+      title: `${tool.name} - Instant Browser Utility | FileForge`,
       description: tool.metaDescription,
       url: `https://convertorbit.com/tools/${tool.id}`,
-      siteName: "ConvertOrbit",
+      siteName: "FileForge",
       type: "website",
     },
   };

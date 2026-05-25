@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ConvertOrbit - Convert & Compress Files Instantly",
-  description: "Secure, free, client-side utility platform for images, videos, and PDFs. Zero server uploads.",
+  title: "FileForge - Secure Universal File Tools",
+  description: "Secure, free, browser-sandboxed utility platform for images, videos, and PDFs. Compress exact KB, convert, and crop with zero server uploads.",
   metadataBase: new URL("https://convertorbit.com"),
 };
 

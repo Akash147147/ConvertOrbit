@@ -16,7 +16,7 @@ export default function Header() {
                 <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </div>
               <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-800 bg-clip-text text-transparent">
-                Convert<span className="bg-gradient-to-r from-accent-blue to-accent-indigo bg-clip-text text-transparent">Orbit</span>
+                File<span className="bg-gradient-to-r from-accent-blue to-accent-indigo bg-clip-text text-transparent">Forge</span>
               </span>
             </Link>
             

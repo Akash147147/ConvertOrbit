@@ -103,59 +103,13 @@ export default function Hero() {
   const routePreloadedFiles = (files: File[]) => {
     if (files.length === 0) return;
 
-    if (files.length > 1) {
-      const allPdfs = files.every(f => f.name.toLowerCase().endsWith(".pdf"));
-      const allImages = files.every(f => {
-        const name = f.name.toLowerCase();
-        return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
-      });
-
-      if (allPdfs) {
-        if (typeof window !== "undefined") {
-          (window as any).__preloadedFile = files[0];
-          (window as any).__preloadedFiles = files;
-        }
-        router.push(`/tools/merge-pdf`);
-        return;
-      } else if (allImages) {
-        if (typeof window !== "undefined") {
-          (window as any).__preloadedFile = files[0];
-          (window as any).__preloadedFiles = files;
-        }
-        router.push(`/tools/jpg-to-pdf`);
-        return;
+    if (typeof window !== "undefined") {
+      (window as any).__preloadedFile = files[0];
+      if (files.length > 1) {
+        (window as any).__preloadedFiles = files;
       }
     }
-
-    const file = files[0];
-    const name = file.name.toLowerCase();
-    let targetToolId = "";
-
-    if (name.endsWith(".heic")) {
-      targetToolId = "heic-to-jpg";
-    } else if (name.endsWith(".png")) {
-      targetToolId = "png-to-ico";
-    } else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) {
-      targetToolId = "compress-image-exact-kb";
-    } else if (name.endsWith(".mov")) {
-      targetToolId = "mov-to-mp4";
-    } else if (name.endsWith(".pdf")) {
-      targetToolId = "pdf-compressor";
-    } else if (name.endsWith(".docx")) {
-      targetToolId = "word-to-pdf";
-    }
-
-    if (targetToolId) {
-      if (typeof window !== "undefined") {
-        (window as any).__preloadedFile = file;
-      }
-      router.push(`/tools/${targetToolId}`);
-    } else {
-      setFeedback({
-        type: "error",
-        msg: "Format not supported for auto-routing. Please select a specific tool card below or use search!"
-      });
-    }
+    router.push(`/tools/universal-dashboard`);
   };
 
   const filteredTools = ALL_TOOLS.filter(tool =>
@@ -207,14 +161,24 @@ export default function Hero() {
             <Upload className="h-6 w-6 text-accent-blue" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">
-            Drag & drop files here to start auto-routing
+            Drag & drop files here to analyze instantly
           </h2>
           <p className="text-xs text-slate-400 font-medium mt-1">
-            Supports HEIC, PNG, JPG, MOV, PDF, and DOCX files. Drag multiple PDFs to Merge!
+            Supports HEIC, PNG, JPG, MOV, PDF, and DOCX files. Analyze properties or bulk process locally!
           </p>
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] font-semibold text-emerald-600 bg-emerald-50 w-fit mx-auto px-2.5 py-1 rounded-md">
-            <ShieldCheck className="h-4 w-4" />
-            <span>Files processed securely. Zero server uploads.</span>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100/50">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Files never leave device</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] font-bold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-md border border-sky-100/50">
+              <Zap className="h-3.5 w-3.5" />
+              <span>100% Local sandbox</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100/50">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>Auto-purge browser RAM</span>
+            </div>
           </div>
         </div>
 

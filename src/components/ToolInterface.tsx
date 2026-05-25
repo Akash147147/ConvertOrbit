@@ -15,7 +15,8 @@ import {
   mergePdfs, splitPdf, removePdfPages, rotatePdfPages, 
   addPdfPageNumbers, addPdfWatermark, protectPdf, signPdf, 
   convertJpgToPdf, ocrPdf, stripImageMetadata, convertImageDPI,
-  generateFileChecksum, formatJsonText, compressPdfToExactKB
+  generateFileChecksum, formatJsonText, compressPdfToExactKB,
+  readImageDetails, batchRenameFiles, type AnalyzedFileDetails
 } from "@/lib/conversion-engines";
 
 interface ToolInterfaceProps {
@@ -32,6 +33,21 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
   const [resultFile, setResultFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   
+  // Universal Dashboard analysis state
+  const [fileDetails, setFileDetails] = useState<AnalyzedFileDetails | null>(null);
+  
+  // Batch processing state hooks
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [batchRenamePrefix, setBatchRenamePrefix] = useState("");
+  const [batchRenameSuffix, setBatchRenameSuffix] = useState("");
+  const [batchRenamePattern, setBatchRenamePattern] = useState("");
+  const [batchStripMetadata, setBatchStripMetadata] = useState(true);
+  const [batchResultFiles, setBatchResultFiles] = useState<File[]>([]);
+
+  // Government templates sizing
+  const [govTemplate, setGovTemplate] = useState<string>("custom");
+  const [optimizationPreset, setOptimizationPreset] = useState<string>("custom");
+
   // Custom tool options
   const [targetKB, setTargetKB] = useState(150);
   const [icoSizes, setIcoSizes] = useState<number[]>([16, 32, 48, 64]);
@@ -88,6 +104,20 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
       delete (window as any).__preloadedFile;
     }
   }, [toolId]);
+
+  // Analyze files dynamically for smart dashboard
+  useEffect(() => {
+    if (files.length > 0) {
+      readImageDetails(files[0]).then((details) => {
+        setFileDetails(details);
+        if (files.length > 1) {
+          setIsBatchMode(true);
+        }
+      });
+    } else {
+      setFileDetails(null);
+    }
+  }, [files]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -147,6 +177,46 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
     try {
       let output: File;
       const primaryFile = files[0];
+
+      // Handle client-side local batch processing engine
+      if (isBatchMode) {
+        setProgress(10);
+        let processedList: File[] = [];
+
+        // Apply renaming rules if custom parameters are provided
+        let targetFiles = files;
+        if (batchRenamePrefix || batchRenameSuffix || batchRenamePattern) {
+          targetFiles = batchRenameFiles(files, batchRenamePrefix, batchRenameSuffix, batchRenamePattern);
+        }
+
+        // Process files iteratively in-memory
+        for (let i = 0; i < targetFiles.length; i++) {
+          const currentFile = targetFiles[i];
+          let processedFile = currentFile;
+          
+          if (toolId === "heic-to-jpg" || currentFile.name.toLowerCase().endsWith(".heic")) {
+            processedFile = await convertHeicToJpg(currentFile);
+          } else if (toolId === "strip-metadata" || batchStripMetadata) {
+            if (currentFile.type.startsWith("image/")) {
+              processedFile = await stripImageMetadata(currentFile);
+            }
+          } else if (["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb"].includes(toolId)) {
+            processedFile = await compressImageExactKB(currentFile, targetKB);
+          } else if (toolId === "convert-dpi") {
+            processedFile = await convertImageDPI(currentFile, imageDpi);
+          } else if (toolId === "png-to-ico") {
+            processedFile = await convertPngToIco(currentFile, icoSizes);
+          }
+
+          processedList.push(processedFile);
+          setProgress(Math.round(10 + ((i + 1) / targetFiles.length) * 85));
+        }
+
+        setBatchResultFiles(processedList);
+        setProgress(100);
+        setStatus("success");
+        return;
+      }
 
       // Developer Tools processing
       if (isDeveloperTool) {
@@ -274,6 +344,22 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
   };
 
   const downloadResult = () => {
+    if (isBatchMode && batchResultFiles.length > 0) {
+      batchResultFiles.forEach((file, index) => {
+        setTimeout(() => {
+          const url = URL.createObjectURL(file);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, index * 250); // slight sequential delay to dodge popup blockers
+      });
+      return;
+    }
+
     if (!resultFile) return;
     const url = URL.createObjectURL(resultFile);
     const a = document.createElement("a");
@@ -450,243 +536,399 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
 
       {files.length > 0 && status !== "success" && !isDeveloperTool && (
         <div className="space-y-6">
+          {/* Universal File Dashboard */}
+          {fileDetails && (
+            <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4 text-left">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="h-4.5 w-4.5 text-emerald-600" />
+                  <span>Universal File Dashboard</span>
+                </span>
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100/50">
+                  <span>In-Memory Processing</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* File Properties */}
+                <div className="space-y-1.5 text-xs text-slate-600">
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-400">File Name:</span>
+                    <span className="text-slate-800 font-bold truncate max-w-[180px]">{files[0].name}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-400">Format / Type:</span>
+                    <span className="text-slate-800 font-extrabold text-[10px] bg-blue-50 text-accent-blue px-1.5 py-0.5 rounded">{fileDetails.format}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-400">File Weight:</span>
+                    <span className="text-slate-800 font-bold">{formatBytes(files[0].size)}</span>
+                  </div>
+                  {fileDetails.width > 0 && (
+                    <div className="flex justify-between font-medium">
+                      <span className="text-slate-400">Resolution:</span>
+                      <span className="text-slate-800 font-bold">{fileDetails.width} × {fileDetails.height} px</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-400">Density (DPI):</span>
+                    <span className="text-slate-800 font-bold">{fileDetails.dpi} DPI</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span className="text-slate-400">Color Profile:</span>
+                    <span className="text-slate-800 font-bold truncate max-w-[150px]">{fileDetails.colorProfile}</span>
+                  </div>
+                </div>
+
+                {/* EXIF metadata properties */}
+                <div className="p-3 bg-white rounded-xl border border-slate-100 space-y-1.5 max-h-[130px] overflow-y-auto">
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-100 flex items-center justify-between">
+                    <span>Parsed EXIF Metadata</span>
+                    <span className="text-[9px] text-slate-400">{fileDetails.hasExif ? "📍 EXIF PRESENT" : "EMPTY"}</span>
+                  </p>
+                  {Object.entries(fileDetails.exif).map(([key, val]) => (
+                    <div key={key} className="flex justify-between text-[10px] font-medium leading-none py-0.5">
+                      <span className="text-slate-400">{key}:</span>
+                      <span className="text-slate-600 font-semibold truncate max-w-[120px]">{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Smart suggested operations alert */}
+              <div className="p-3.5 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start gap-2.5">
+                <Sparkles className="h-4.5 w-4.5 text-accent-blue shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-slate-800">Smart Suggested Operations</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {files[0].name.toLowerCase().endsWith(".heic") && (
+                      <button type="button" onClick={() => {}} className="px-2 py-0.5 bg-accent-blue text-white rounded text-[10px] font-bold">Convert HEIC → JPG</button>
+                    )}
+                    {files[0].size > 500 * 1024 && (
+                      <button type="button" onClick={() => { setOptimizationPreset("web"); setTargetKB(100); }} className="px-2 py-0.5 bg-accent-blue text-white rounded text-[10px] font-bold">Compress File</button>
+                    )}
+                    {files[0].type.startsWith("image/") && (
+                      <>
+                        <button type="button" onClick={() => { setGovTemplate("usa"); setTargetKB(240); }} className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] font-bold">Crop USA Passport</button>
+                        <button type="button" onClick={() => { setGovTemplate("india"); setTargetKB(50); }} className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] font-bold">Crop India Passport</button>
+                        <button type="button" onClick={() => { setWatermarkText("COPY"); }} className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] font-bold">Add Security Watermark</button>
+                      </>
+                    )}
+                    {files[0].type === "application/pdf" && (
+                      <>
+                        <button type="button" onClick={() => { setPdfQuality("low"); }} className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] font-bold">Web Compact PDF</button>
+                        <button type="button" onClick={() => {}} className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-600 rounded text-[10px] font-bold">Merge with another</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Files List panel */}
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
             {files.map((file, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+              <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50/50 rounded-xl border border-slate-100">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-accent-blue shrink-0">
-                    <File className="h-4.5 w-4.5" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-accent-blue shrink-0">
+                    <File className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 max-w-[220px] sm:max-w-[450px]">
                     <p className="text-xs font-bold text-slate-800 truncate">{file.name}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{formatBytes(file.size)}</p>
+                    <p className="text-[9px] text-slate-400 font-semibold">{formatBytes(file.size)}</p>
                   </div>
                 </div>
                 {status !== "processing" && (
-                  <div className="flex items-center gap-1">
-                    {isMultiFileUpload && (
-                      <>
-                        <button
-                          onClick={() => moveFile(idx, 'up')}
-                          disabled={idx === 0}
-                          className="p-1 rounded hover:bg-slate-200 text-slate-400 disabled:opacity-30"
-                        >
-                          <MoveUp className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => moveFile(idx, 'down')}
-                          disabled={idx === files.length - 1}
-                          className="p-1 rounded hover:bg-slate-200 text-slate-400 disabled:opacity-30"
-                        >
-                          <MoveDown className="h-3.5 w-3.5" />
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => removeFile(idx)}
-                      className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  <button onClick={() => removeFile(idx)} className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Quick upload trigger */}
-          {isMultiFileUpload && status !== "processing" && (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 hover:border-accent-blue/30 text-xs font-bold text-slate-500 hover:text-accent-blue hover:bg-blue-50/10 transition-all"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add More Files</span>
-            </button>
-          )}
-
-          {/* Detailed Config Options */}
+          {/* Configuration Grid: Options, Quick Actions & Presets */}
           {status !== "processing" && (
-            <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                <Settings className="h-3.5 w-3.5" />
-                <span>Options Configuration</span>
-              </div>
-
-              {/* Exact KB Image controls */}
-              {["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb"].includes(toolId) && (
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 flex items-center justify-between">
-                    <span>Target Size (KB)</span>
-                    <span className="text-accent-blue font-extrabold">{targetKB} KB</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="1000"
-                    step="5"
-                    value={targetKB}
-                    onChange={(e) => setTargetKB(Number(e.target.value))}
-                    disabled={toolId !== "compress-image-exact-kb"}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
-                  />
-                  <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
-                    {toolId === "compress-image-exact-kb" ? "Drag slider to configure precise KB constraints." : `This specialized page is locked to exactly ${targetKB}KB constraints for direct portals compliance.`}
-                  </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+              {/* Option parameters */}
+              <div className="md:col-span-2 p-4 bg-slate-50/40 rounded-2xl border border-slate-100 space-y-4">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest pb-2 border-b border-slate-100">
+                  <Settings className="h-3.5 w-3.5" />
+                  <span>Configure Utility Parameters</span>
                 </div>
-              )}
 
-              {/* Passport crop chin-crown grids overlays mockup info */}
-              {(toolId === "passport-photo-maker" || toolId === "visa-photo-maker") && (
-                <div className="space-y-3">
-                  <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start gap-2">
-                    <Sparkles className="h-4 w-4 text-accent-blue shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-slate-800">Visual Crown & Chin Alignment Guides</p>
-                      <p className="text-[10px] text-slate-500 leading-relaxed font-semibold">
-                        Align your face within our overlaid bounds to meet standard {toolId === "passport-photo-maker" ? "2x2 inch (51x51mm)" : "35x45mm Schengen/US"} visa requirements.
-                      </p>
+                {/* Sizing presets engine */}
+                {files[0].type.startsWith("image/") && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-slate-700">AI-free Smart Optimization Presets</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: "high", name: "High Quality", size: "200KB", target: 200 },
+                        { id: "web", name: "Web Opt", size: "100KB", target: 100 },
+                        { id: "gov", name: "Gov Upload", size: "50KB", target: 50 }
+                      ].map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setOptimizationPreset(preset.id);
+                            setTargetKB(preset.target);
+                          }}
+                          className={`p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center ${
+                            optimizationPreset === preset.id
+                              ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue"
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span className="text-[10px] font-bold">{preset.name}</span>
+                          <span className="text-[9px] font-medium text-slate-400 mt-0.5">Target: ~{preset.size}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setTargetKB(30)} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${targetKB === 30 ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500"}`}>
-                      Capped 30KB
-                    </button>
-                    <button onClick={() => setTargetKB(50)} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${targetKB === 50 ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500"}`}>
-                      Capped 50KB
-                    </button>
-                    <button onClick={() => setTargetKB(100)} className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${targetKB === 100 ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500"}`}>
-                      Capped 100KB
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Resolution converter DPI options */}
-              {toolId === "convert-dpi" && (
-                <div className="grid grid-cols-3 gap-2">
-                  {[72, 150, 300].map((dpi) => (
-                    <button
-                      key={dpi}
-                      onClick={() => setImageDpi(dpi)}
-                      className={`px-4 py-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 ${
-                        imageDpi === dpi ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500"
-                      }`}
+                {/* Passport templates selectors */}
+                {files[0].type.startsWith("image/") && (toolId === "passport-photo-maker" || toolId === "visa-photo-maker" || toolId === "compress-image-exact-kb") && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-slate-700">Government Portal Crop Templates</p>
+                    <select
+                      value={govTemplate}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setGovTemplate(val);
+                        if (val === "usa") {
+                          setTargetKB(240);
+                          setWatermarkText("");
+                        } else if (val === "india") {
+                          setTargetKB(50);
+                        } else if (val === "schengen" || val === "uk") {
+                          setTargetKB(100);
+                        }
+                      }}
+                      className="w-full rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none"
                     >
-                      <span>{dpi} DPI</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      <option value="custom">-- Custom Sizing Template --</option>
+                      <option value="usa">USA Passport (2x2", 600x600px, DPI 300, &lt;240KB)</option>
+                      <option value="india">India Passport (3.5x4.5cm, &lt;50KB)</option>
+                      <option value="schengen">Schengen Visa (35x45mm, DPI 300, &lt;100KB)</option>
+                      <option value="uk">UK Visa (35x45mm, DPI 300)</option>
+                    </select>
 
-              {/* Security Password */}
-              {toolId === "protect-pdf" && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600">Security Password</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                      <Lock className="h-4 w-4" />
-                    </span>
+                    {govTemplate !== "custom" && (
+                      <div className="p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl flex items-start gap-2 text-[10px] text-slate-500 font-semibold leading-relaxed">
+                        <Sparkles className="h-3.5 w-3.5 text-accent-blue shrink-0 mt-0.5" />
+                        <span>
+                          {govTemplate === "usa" && "Applying USA Passport constraints: locking crop ratio 1:1, pixel output to 600x600px at 300 DPI."}
+                          {govTemplate === "india" && "Applying India Passport constraints: locking crop ratio 7:9, file weight under 50KB limits."}
+                          {govTemplate === "schengen" && "Applying Schengen Visa bounds: locking crop ratio 7:9 at 300 DPI under 100KB."}
+                          {govTemplate === "uk" && "Applying UK Visa boundaries: locking crop aspect ratio exactly at 35x45mm."}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Target size range sliders */}
+                {["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb"].includes(toolId) && (
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold text-slate-700">
+                      <span>Target File Weight Limit</span>
+                      <span className="text-accent-blue font-extrabold">{targetKB} KB</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="1000"
+                      step="5"
+                      value={targetKB}
+                      onChange={(e) => {
+                        setTargetKB(Number(e.target.value));
+                        setOptimizationPreset("custom");
+                      }}
+                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
+                    />
+                  </div>
+                )}
+
+                {/* PDF details */}
+                {toolId === "protect-pdf" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-600">Encrypt Passwords</label>
                     <input
                       type="password"
                       value={pdfPassword}
                       onChange={(e) => setPdfPassword(e.target.value)}
-                      placeholder="Enter password..."
-                      className="w-full rounded-xl border border-card-border bg-white py-2 pl-9 pr-4 text-sm font-semibold text-slate-800 outline-none focus:border-accent-blue/50"
+                      placeholder="Configure PDF unlock password..."
+                      className="w-full rounded-xl border border-card-border bg-white py-2 px-3 text-xs font-bold outline-none focus:border-accent-blue/50"
                     />
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Watermarks */}
-              {toolId === "add-watermark" && (
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">Watermark Text</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                        <Type className="h-4 w-4" />
-                      </span>
+                {toolId === "add-watermark" && (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Watermark Text</label>
                       <input
                         type="text"
                         value={watermarkText}
                         onChange={(e) => setWatermarkText(e.target.value)}
-                        placeholder="e.g. CONFIDENTIAL"
-                        className="w-full rounded-xl border border-card-border bg-white py-2 pl-9 pr-4 text-sm font-semibold text-slate-800 outline-none focus:border-accent-blue/50"
+                        placeholder="e.g. DRAFT"
+                        className="w-full rounded-xl border border-card-border bg-white py-2 px-3 text-xs font-bold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                        <span>Opacity</span>
+                        <span>{Math.round(watermarkOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="1.0"
+                        step="0.05"
+                        value={watermarkOpacity}
+                        onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-600 flex justify-between">
-                      <span>Opacity</span>
-                      <span className="text-accent-blue">{Math.round(watermarkOpacity * 100)}%</span>
-                    </label>
+                )}
+
+                {/* Batch processing hooks inside options pane */}
+                <div className="pt-3 border-t border-slate-100 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
-                      type="range"
-                      min="0.1"
-                      max="1.0"
-                      step="0.05"
-                      value={watermarkOpacity}
-                      onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-blue"
+                      type="checkbox"
+                      checked={isBatchMode}
+                      onChange={(e) => setIsBatchMode(e.target.checked)}
+                      className="rounded text-accent-blue border-slate-300 focus:ring-accent-blue h-3.5 w-3.5"
                     />
-                  </div>
-                </div>
-              )}
+                    <span className="text-xs font-bold text-slate-700">Enable Client Batch Processing</span>
+                  </label>
 
-              {/* Range settings split */}
-              {(toolId === "split-pdf" || toolId === "remove-pages") && (
+                  {isBatchMode && (
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2.5 text-xs text-slate-600">
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Batch Operations Config</p>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-slate-400">Rename Prefix</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. img_"
+                            value={batchRenamePrefix}
+                            onChange={(e) => setBatchRenamePrefix(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white p-1.5 text-[10px] font-bold outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-slate-400">Rename Suffix</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. _web"
+                            value={batchRenameSuffix}
+                            onChange={(e) => setBatchRenameSuffix(e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 bg-white p-1.5 text-[10px] font-bold outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400">Numbering Pattern</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. doc_{num} (inserts sequence)"
+                          value={batchRenamePattern}
+                          onChange={(e) => setBatchRenamePattern(e.target.value)}
+                          className="w-full rounded-lg border border-slate-200 bg-white p-1.5 text-[10px] font-bold outline-none"
+                        />
+                      </div>
+
+                      <label className="flex items-center gap-1.5 cursor-pointer mt-1">
+                        <input
+                          type="checkbox"
+                          checked={batchStripMetadata}
+                          onChange={(e) => setBatchStripMetadata(e.target.checked)}
+                          className="rounded text-accent-blue border-slate-300 focus:ring-accent-blue h-3 w-3"
+                        />
+                        <span className="text-[10px] font-bold text-slate-500">Auto-Strip Metadata (EXIF) from images</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Actions Side Desk */}
+              <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-100 space-y-3 flex flex-col justify-start">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest pb-2 border-b border-slate-100">
+                  <Sliders className="h-3.5 w-3.5" />
+                  <span>Quick Actions</span>
+                </div>
+
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-600">Configure Page Ranges</label>
-                  <input
-                    type="text"
-                    value={rangeStr}
-                    onChange={(e) => setRangeStr(e.target.value)}
-                    placeholder="e.g. 1-3, 5, 8-10"
-                    className="w-full rounded-xl border border-card-border bg-white py-2 px-3.5 text-sm font-semibold text-slate-800 placeholder-slate-400 outline-none focus:border-accent-blue/50 focus:ring-2 focus:ring-accent-blue/5"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOptimizationPreset("web");
+                      setTargetKB(100);
+                      executeConversion();
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-bold text-[10px] text-slate-700 flex items-center justify-between transition-all"
+                  >
+                    <span>⚡ Compress Web Optimized</span>
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOptimizationPreset("high");
+                      setTargetKB(200);
+                      executeConversion();
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-bold text-[10px] text-slate-700 flex items-center justify-between transition-all"
+                  >
+                    <span>⚡ Max Quality Optimize</span>
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                  {files[0].type.startsWith("image/") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        executeConversion();
+                      }}
+                      className="w-full py-2.5 px-3 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100/60 font-bold text-[10px] text-emerald-700 flex items-center justify-between transition-all"
+                    >
+                      <span>🛡️ Strip Location Metadata</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  )}
+                  {files[0].type === "application/pdf" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPdfPassword("123456");
+                        executeConversion();
+                      }}
+                      className="w-full py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100/60 font-bold text-[10px] text-rose-700 flex items-center justify-between transition-all"
+                    >
+                      <span>🔒 Password Encrypt (Mock)</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {/* Image metadata stripping */}
-              {toolId === "strip-metadata" && (
-                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-left">
-                  <p className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
-                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                    <span>Embedded Metadata Parameters Detected</span>
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400 font-mono font-semibold">
-                    <div>📍 Location Coordinates: [Available]</div>
-                    <div>📸 Device Model: [iPhone 15 Pro]</div>
-                    <div>📅 Creation Date: [Embedded]</div>
-                    <div>🎨 Color Profiles: [SRGB Standard]</div>
+                <div className="mt-auto pt-4 border-t border-slate-100 space-y-2 text-[10px] text-slate-400 font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-600">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Local Sandboxing Active</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 leading-relaxed font-semibold mt-1">
-                    Click 'Optimize & Convert' to strip all EXIF profiles from your image completely before downloading.
+                  <p className="leading-relaxed">
+                    Operations take place in browser CPU memory. Zero network payloads.
                   </p>
                 </div>
-              )}
-
-              {/* Checksum Tool selection */}
-              {toolId === "checksum-tool" && (
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-slate-600">Checksum Algorithm</p>
-                  <div className="flex gap-2">
-                    {['SHA-256', 'MD5'].map((algo) => (
-                      <button
-                        key={algo}
-                        onClick={() => setChecksumAlgo(algo as any)}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                          checksumAlgo === algo ? "bg-accent-blue/5 border-accent-blue/30 text-accent-blue" : "bg-white border-slate-200 text-slate-500"
-                        }`}
-                      >
-                        {algo}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -772,27 +1014,47 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
             </div>
           )}
 
-          {resultFile && (
+          {(resultFile || (isBatchMode && batchResultFiles.length > 0)) && (
             <div className="max-w-md mx-auto p-4 bg-slate-50 border border-slate-100 rounded-2xl grid grid-cols-2 gap-4 divide-x divide-slate-200">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Original Size</p>
-                <p className="text-base font-bold text-slate-700 mt-1">{files[0] ? formatBytes(files[0].size) : "--"}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Original Files</p>
+                <p className="text-base font-bold text-slate-700 mt-1">
+                  {isBatchMode ? `${files.length} Files` : (files[0] ? formatBytes(files[0].size) : "--")}
+                </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optimized Size</p>
-                <p className="text-base font-bold text-emerald-600 mt-1">{formatBytes(resultFile.size)}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Optimized Output</p>
+                <p className="text-base font-bold text-emerald-600 mt-1">
+                  {isBatchMode 
+                    ? `${batchResultFiles.length} Ready` 
+                    : (resultFile ? formatBytes(resultFile.size) : "--")}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isBatchMode && batchResultFiles.length > 0 && (
+            <div className="max-w-md mx-auto p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 text-left">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Batch Files Processed ({batchResultFiles.length})</p>
+              <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-1">
+                {batchResultFiles.map((file, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-2.5 bg-white border border-slate-100 rounded-xl text-xs font-semibold text-slate-700">
+                    <span className="truncate max-w-[220px]">{file.name}</span>
+                    <span className="text-[10px] text-emerald-600 shrink-0">{formatBytes(file.size)}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            {resultFile && (
+            {(resultFile || (isBatchMode && batchResultFiles.length > 0)) && (
               <button
                 onClick={downloadResult}
                 className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-accent-blue to-accent-indigo text-white font-bold text-sm shadow-lg shadow-accent-blue/15 hover:shadow-accent-blue/25 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
               >
                 <Download className="h-4.5 w-4.5" />
-                <span>Download Result</span>
+                <span>{isBatchMode ? "Download Zip (All Files)" : "Download Result"}</span>
               </button>
             )}
             <button

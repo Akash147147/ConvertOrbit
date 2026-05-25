@@ -19,7 +19,7 @@ export default function Footer() {
                 <Orbit className="h-4.5 w-4.5" />
               </div>
               <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-800 bg-clip-text text-transparent">
-                Convert<span className="bg-gradient-to-r from-accent-blue to-accent-indigo bg-clip-text text-transparent">Orbit</span>
+                File<span className="bg-gradient-to-r from-accent-blue to-accent-indigo bg-clip-text text-transparent">Forge</span>
               </span>
             </Link>
             <p className="text-sm text-slate-500 max-w-xs">
@@ -85,16 +85,19 @@ export default function Footer() {
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Trust & Safety</h3>
             <ul className="space-y-2 text-sm text-slate-600">
               <li>
-                <span>No File Size Limits</span>
+                <Link href="/privacy" className="hover:text-accent-blue transition-colors">Privacy Policy</Link>
               </li>
               <li>
-                <span>No User Accounts Required</span>
+                <Link href="/terms" className="hover:text-accent-blue transition-colors">Terms of Service</Link>
               </li>
               <li>
-                <span>100% Free Forever</span>
+                <Link href="/security" className="hover:text-accent-blue transition-colors">Security Architecture</Link>
               </li>
               <li>
-                <span>Open Source Privacy</span>
+                <Link href="/status" className="hover:text-accent-blue transition-colors">System Uptime Status</Link>
+              </li>
+              <li>
+                <Link href="/transparency" className="hover:text-accent-blue transition-colors">Transparency Report</Link>
               </li>
             </ul>
           </div>
@@ -102,7 +105,7 @@ export default function Footer() {
 
         <div className="border-t border-card-border mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} ConvertOrbit. All rights reserved.
+            &copy; {new Date().getFullYear()} FileForge. All rights reserved.
           </p>
           <p className="flex items-center gap-1 text-xs text-slate-400">
             <span>Made with</span>

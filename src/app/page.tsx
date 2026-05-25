@@ -14,16 +14,16 @@ import PrivacySection from "@/components/PrivacySection";
 import CustomCompressor from "@/components/CustomCompressor";
 
 export const metadata: Metadata = {
-  title: "ConvertOrbit - 100% Free & Secure Online PDF & Exact KB Tools",
+  title: "FileForge - 100% Free & Secure Online PDF & Exact KB Tools",
   description: "Fast, Secure and Free File Tools for Everyone. Resize image to exact KB, create passport size photos, compress PDF to exactly 100KB/500KB client-side inside your browser safely.",
   alternates: {
     canonical: "https://convertorbit.com",
   },
   openGraph: {
-    title: "ConvertOrbit - Secure Exact Sizing Document Utilities",
+    title: "FileForge - Secure Exact Sizing Document Utilities",
     description: "Compress PDFs to exactly 100KB/500KB, resize images to 20KB/50KB/100KB, and crop passport photos client-side safely in browser.",
     url: "https://convertorbit.com",
-    siteName: "ConvertOrbit",
+    siteName: "FileForge",
     type: "website",
   },
 };
@@ -119,7 +119,7 @@ export default function Home() {
   const portalSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "ConvertOrbit",
+    "name": "FileForge",
     "url": "https://convertorbit.com",
     "potentialAction": {
       "@type": "SearchAction",
@@ -131,7 +131,7 @@ export default function Home() {
   const orgSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "ConvertOrbit",
+    "name": "FileForge",
     "url": "https://convertorbit.com",
     "logo": "https://convertorbit.com/logo.png"
   };

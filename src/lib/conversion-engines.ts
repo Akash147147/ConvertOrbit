@@ -905,11 +905,38 @@ export async function compressWordDocx(
 ): Promise<File> {
   if (onProgress) onProgress(20);
   const bytes = await file.arrayBuffer();
-  if (onProgress) onProgress(60);
+  if (onProgress) onProgress(40);
   
-  // Package bytes inside the targetKB bounds locally
-  const compacted = bytes.slice(0, Math.min(bytes.byteLength, targetKB * 1024));
+  // Extract text using mammoth
+  const mammoth = await getMammoth();
+  const options = {
+    styleMap: [
+      "p[style-name='Heading 1'] => h1:fresh",
+      "p[style-name='Heading 2'] => h2:fresh",
+      "p[style-name='Heading 3'] => h3:fresh",
+    ]
+  };
+  const result = await mammoth.convertToHtml({ arrayBuffer: bytes }, options);
+  const text = result.value.replace(/<\/?[^>]+(>|$)/g, "\n").trim();
+  if (onProgress) onProgress(70);
+
+  // Re-build a clean docx
+  const mod = await import('docx');
+  const { Document, Packer, Paragraph, TextRun } = mod.default || mod;
+
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: text.split("\n").map((line: string) => new Paragraph({
+        children: [new TextRun(line)]
+      }))
+    }]
+  });
+  
+  if (onProgress) onProgress(90);
+  const blob = await Packer.toBlob(doc);
+  
   if (onProgress) onProgress(100);
   const newName = file.name.replace(/\.[^/.]+$/, "") + "_compressed.docx";
-  return new File([compacted], newName, { type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+  return new File([blob], newName, { type: file.type || "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 }

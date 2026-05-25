@@ -143,6 +143,19 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
     ],
     related: ["compress-pdf-100kb", "pdf-compressor"]
   },
+  "compress-word": {
+    id: "compress-word",
+    name: "Compress Word Document",
+    headline: "Compress Word Document Online",
+    description: "Reduce the file size of Word documents (.docx) by stripping formatting and layouts, producing a lightweight, text-only Word file.",
+    inputAccept: ".doc,.docx",
+    metaDescription: "Compress Word files online securely. Make lightweight Word documents locally in your browser. Zero data uploads.",
+    steps: ["Select your Word file.", "Click 'Optimize & Convert' to boot our local compressor.", "Wait a few seconds for the document to be processed.", "Save and download the compressed Word file."],
+    faqs: [
+      { q: "What is removed during compression?", a: "To achieve maximum compression, this tool extracts the plain text from your document and generates a new, clean Word file without heavy images or complex formatting." }
+    ],
+    related: ["word-to-pdf", "pdf-compressor"]
+  },
   "ocr-pdf": {
     id: "ocr-pdf",
     name: "OCR PDF",

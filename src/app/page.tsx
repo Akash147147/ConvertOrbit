@@ -54,6 +54,7 @@ const CATEGORIES: CategoryInfo[] = [
       { id: "signature-resize-20kb", name: "Signature Resize 20KB", desc: "Scale signatures under 20KB limits.", icon: <Sparkles className="h-4 w-4 text-emerald-500" /> },
       { id: "compress-pdf-100kb", name: "Compress PDF to 100KB", desc: "Reduce PDF under strict 100KB caps.", icon: <FileText className="h-4 w-4 text-emerald-500" /> },
       { id: "compress-pdf-500kb", name: "Compress PDF to 500KB", desc: "Reduce PDF under strict 500KB caps.", icon: <FileText className="h-4 w-4 text-indigo-500" /> },
+      { id: "compress-word", name: "Compress Word", desc: "Reduce DOCX size locally.", icon: <FileText className="h-4 w-4 text-blue-500" /> },
     ]
   },
   {

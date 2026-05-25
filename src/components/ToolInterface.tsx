@@ -326,6 +326,9 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
         case "mov-to-mp4":
           output = await convertMovToMp4(primaryFile, setProgress);
           break;
+        case "compress-word":
+          output = await compressWordDocx(primaryFile, targetKB, setProgress);
+          break;
         case "word-to-pdf":
           output = await convertWordToPdf(primaryFile, setProgress);
           break;
@@ -842,7 +845,7 @@ export default function ToolInterface({ toolId, inputAccept, toolName }: ToolInt
                 )}
 
                 {/* Target size range sliders */}
-                {(["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb", "universal-dashboard"].includes(toolId) && targetFormat === "original") && (
+                {(["compress-image-exact-kb", "compress-image-20kb", "compress-image-50kb", "compress-image-100kb", "signature-resize-20kb", "universal-dashboard", "compress-word"].includes(toolId) && targetFormat === "original") && (
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-slate-700">
                       <span>Target File Weight Limit</span>

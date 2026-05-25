@@ -51,7 +51,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Developer utilities
     "json-formatter",
     "base64-encoder",
-    "hash-generator"
+    "hash-generator",
+
+    // Additional converters
+    "png-to-ico",
+    "word-to-pdf",
+    "pdf-to-word",
+    "jpg-to-pdf"
   ];
 
   const toolPaths = tools.map((tool) => ({

@@ -414,6 +414,127 @@ const TOOLS_DATABASE: Record<string, ToolData> = {
       { q: "Does this require downloading desktop software?", a: "No. The system loads FFmpeg.wasm dynamically inside your browser environment to convert files securely and locally." }
     ],
     related: ["pdf-compressor", "heic-to-jpg"]
+  },
+
+  // Security tools
+  "protect-pdf": {
+    id: "protect-pdf",
+    name: "Protect PDF",
+    headline: "Password Protect PDF Files Online Free",
+    description: "Encrypt and password-lock your PDF documents entirely inside your browser. No server uploads, no third-party access to your sensitive data.",
+    inputAccept: ".pdf",
+    metaDescription: "Password protect PDF online for free. Encrypt PDF documents with secure passwords client-side in your browser. Zero file uploads.",
+    steps: [
+      "Upload the PDF document you want to protect.",
+      "Enter a strong password in the password field.",
+      "Click 'Optimize & Convert' to encrypt the PDF locally.",
+      "Download your password-protected PDF file."
+    ],
+    faqs: [
+      { q: "Is the encryption secure?", a: "Yes. The PDF is encrypted using standard PDF encryption algorithms directly in your browser memory. Your file and password never leave your device." },
+      { q: "Can I remove the password later?", a: "You will need the original password to open the file. Use any PDF reader to remove the password protection after opening." }
+    ],
+    related: ["sign-pdf", "merge-pdf"]
+  },
+  "sign-pdf": {
+    id: "sign-pdf",
+    name: "Sign PDF",
+    headline: "Draw & Stamp Signatures on PDF Documents",
+    description: "Draw your signature on a built-in canvas pad, then stamp it as a transparent overlay on any page of your PDF document. 100% client-side.",
+    inputAccept: ".pdf",
+    metaDescription: "Sign PDF online for free. Draw signatures and stamp them on PDF pages client-side in your browser. No uploads, fully private.",
+    steps: [
+      "Upload the PDF document you want to sign.",
+      "Draw your signature on the signature pad below.",
+      "Click 'Save Signature' to lock your handwriting.",
+      "Click 'Optimize & Convert' to stamp the signature on the specified page.",
+      "Download your signed PDF document."
+    ],
+    faqs: [
+      { q: "Is my signature stored on a server?", a: "No. Your signature is drawn on a local HTML5 canvas element and only exists in your browser's memory. It is never uploaded." },
+      { q: "Can I choose which page to sign?", a: "Yes. You can specify the page number where you want the signature to appear." }
+    ],
+    related: ["protect-pdf", "merge-pdf"]
+  },
+
+  // Image converters
+  "png-to-ico": {
+    id: "png-to-ico",
+    name: "PNG to ICO Converter",
+    headline: "Convert PNG Images to ICO Favicon Format",
+    description: "Transform standard PNG images into multi-resolution ICO favicon files for websites and applications. Processed entirely client-side.",
+    inputAccept: ".png",
+    metaDescription: "Convert PNG to ICO online for free. Create multi-resolution favicon files from PNG images client-side in your browser.",
+    steps: [
+      "Upload your PNG image file.",
+      "Select the desired icon sizes (16x16, 32x32, 48x48, 64x64).",
+      "Click 'Optimize & Convert' to generate the ICO file.",
+      "Download your new ICO favicon file."
+    ],
+    faqs: [
+      { q: "What sizes are included in the ICO file?", a: "By default, our converter generates 16x16, 32x32, 48x48, and 64x64 pixel resolutions packed into a single ICO file." },
+      { q: "Can I use this for my website favicon?", a: "Absolutely. The generated ICO file is ready to use as a favicon in any website or web application." }
+    ],
+    related: ["heic-to-jpg", "compress-image-exact-kb"]
+  },
+
+  // Document converters
+  "word-to-pdf": {
+    id: "word-to-pdf",
+    name: "Word to PDF",
+    headline: "Convert Word Documents to PDF Online",
+    description: "Transform Microsoft Word (.docx) documents into universally portable PDF format directly inside your browser using local rendering.",
+    inputAccept: ".doc,.docx",
+    metaDescription: "Convert Word to PDF online for free. Transform DOCX documents into PDF files securely client-side. No file uploads, instant results.",
+    steps: [
+      "Upload your Word (.docx) document.",
+      "Click 'Optimize & Convert' to render the document locally.",
+      "Preview the converted PDF output.",
+      "Download your new PDF file."
+    ],
+    faqs: [
+      { q: "Does formatting stay intact?", a: "Our local rendering engine preserves text formatting, headings, and basic layouts during conversion." },
+      { q: "Are my documents uploaded to a server?", a: "No. The entire conversion happens client-side in your browser's memory." }
+    ],
+    related: ["pdf-to-word", "merge-pdf"]
+  },
+  "pdf-to-word": {
+    id: "pdf-to-word",
+    name: "PDF to Word",
+    headline: "Convert PDF Documents to Editable Word Files",
+    description: "Extract text and layouts from PDF documents and convert them into editable Microsoft Word (.docx) format entirely client-side.",
+    inputAccept: ".pdf",
+    metaDescription: "Convert PDF to Word online for free. Extract text from PDF files into editable DOCX documents client-side in your browser.",
+    steps: [
+      "Upload your PDF document.",
+      "Click 'Optimize & Convert' to parse and extract text content.",
+      "The engine converts the extracted content into a DOCX format.",
+      "Download your editable Word document."
+    ],
+    faqs: [
+      { q: "Can it handle scanned PDFs?", a: "For scanned image PDFs, we recommend using our OCR PDF tool first to make the text searchable, then convert to Word." },
+      { q: "Is the formatting preserved?", a: "Basic text formatting and paragraphs are preserved. Complex layouts may require minor adjustments." }
+    ],
+    related: ["word-to-pdf", "ocr-pdf"]
+  },
+  "jpg-to-pdf": {
+    id: "jpg-to-pdf",
+    name: "JPG to PDF",
+    headline: "Convert JPG Images to PDF Documents",
+    description: "Combine one or multiple JPG/JPEG images into a single, clean PDF document. Drag and drop multiple images to create multi-page PDFs locally.",
+    inputAccept: ".jpg,.jpeg,.png",
+    metaDescription: "Convert JPG to PDF online for free. Combine multiple images into a single PDF document client-side in your browser.",
+    steps: [
+      "Upload one or more JPG/PNG images.",
+      "Drag to reorder the images in your preferred sequence.",
+      "Click 'Optimize & Convert' to compile the PDF.",
+      "Download your new multi-page PDF document."
+    ],
+    faqs: [
+      { q: "Can I add multiple images?", a: "Yes. You can upload and arrange multiple images to create a multi-page PDF document." },
+      { q: "What image formats are supported?", a: "We support JPG, JPEG, and PNG image formats for PDF conversion." }
+    ],
+    related: ["merge-pdf", "compress-image-exact-kb"]
   }
 };
 
